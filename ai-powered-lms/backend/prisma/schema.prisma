@@ -1,0 +1,368 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String           @id @default(uuid())
+  name            String
+  email           String           @unique
+  createdAt       DateTime         @default(now())
+  department      String?          @default("Computer Engineering")
+  enrollmentNo    String?
+  role            Role             @default(STUDENT)
+  updatedAt       DateTime         @default(now()) @updatedAt
+  avatarUrl       String?
+  employeeId      String?
+  passwordHash    String
+  aiConversations AIConversation[] @relation("UserConversations")
+  coursesTaught   Course[]         @relation("FacultyCourses")
+  enrollments     Enrollment[]     @relation("StudentEnrollments")
+  performances    Performance[]    @relation("StudentPerformances")
+  quizAttempts    QuizAttempt[]    @relation("StudentQuizAttempts")
+  recommendations Recommendation[] @relation("StudentRecommendations")
+  submissions     Submission[]     @relation("StudentSubmissions")
+  materialProgress MaterialProgress[] @relation("StudentMaterialProgress")
+
+  @@index([email])
+  @@index([role])
+}
+
+model Course {
+  id              String           @id @default(uuid())
+  code            String           @unique
+  title           String
+  description     String
+  department      String           @default("Computer Engineering")
+  semester        Int              @default(8)
+  credits         Int              @default(4)
+  totalModules    Int              @default(5)
+  facultyId       String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now()) @updatedAt
+  aiConversations AIConversation[]
+  assignments     Assignment[]
+  faculty         User             @relation("FacultyCourses", fields: [facultyId], references: [id], onDelete: Cascade)
+  documents       Document[]
+  enrollments     Enrollment[]
+  materials       Material[]
+  performances    Performance[]
+  quizzes         Quiz[]
+  recommendations Recommendation[]
+
+  @@index([facultyId])
+  @@index([department])
+  @@index([semester])
+}
+
+model Enrollment {
+  id                 String           @id @default(uuid())
+  studentId          String
+  courseId           String
+  enrolledAt         DateTime         @default(now())
+  progressPercentage Float            @default(0)
+  status             EnrollmentStatus @default(ACTIVE)
+  course             Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student            User             @relation("StudentEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Material {
+  id               String           @id @default(uuid())
+  courseId         String
+  title            String
+  unit             String
+  fileType         String           @default("pdf")
+  fileSize         String           @default("2.5 MB")
+  fileUrl          String?
+  processingStatus ProcessingStatus @default(READY)
+  ragChunksCount   Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(now()) @updatedAt
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  chunks           DocumentChunk[]
+  progressRecords  MaterialProgress[]
+
+  @@index([courseId])
+}
+
+model DocumentChunk {
+  id             String   @id @default(uuid())
+  materialId     String
+  chunkIndex     Int
+  content        String   @db.Text
+  pageNumber     Int?
+  tokenCount     Int                          @default(0)
+  characterCount Int                          @default(0)
+  embedding      Unsupported("vector(3072)")?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @default(now()) @updatedAt
+  material       Material                     @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@unique([materialId, chunkIndex])
+  @@index([materialId])
+  @@index([pageNumber])
+}
+
+model Assignment {
+  id          String       @id @default(uuid())
+  courseId    String
+  title       String
+  description String
+  dueDate     DateTime
+  totalPoints Int          @default(100)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@index([courseId])
+}
+
+model Submission {
+  id           String           @id @default(uuid())
+  assignmentId String
+  studentId    String
+  fileUrl      String?
+  content      String?
+  submittedAt  DateTime         @default(now())
+  score        Float?
+  feedback     String?
+  status       AssignmentStatus @default(SUBMITTED)
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User             @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+}
+
+model Quiz {
+  id               String        @id @default(uuid())
+  courseId         String
+  title            String
+  topic            String
+  difficulty       Difficulty    @default(Medium)
+  timeLimitMinutes Int           @default(20)
+  totalQuestions   Int           @default(5)
+  isAiGenerated    Boolean       @default(false)
+  published        Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+  questions        Question[]
+  course           Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  attempts         QuizAttempt[]
+
+  @@index([courseId])
+}
+
+model Question {
+  id                 String      @id @default(uuid())
+  quizId             String
+  question           String
+  options            String[]
+  correctOptionIndex Int
+  explanation        String
+  topic              String
+  difficulty         Difficulty  @default(Medium)
+  bloomsLevel        BloomsLevel @default(Understand)
+  orderIndex         Int         @default(0)
+  answers            Answer[]
+  quiz               Quiz        @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model QuizAttempt {
+  id                   String   @id @default(uuid())
+  quizId               String
+  studentId            String
+  score                Float
+  totalPoints          Float
+  percentage           Float
+  completedAt          DateTime @default(now())
+  timeSpentSeconds     Int      @default(0)
+  weakTopicsIdentified String[] @default([])
+  answers              Answer[]
+  quiz                 Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student              User     @relation("StudentQuizAttempts", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([studentId])
+}
+
+model Answer {
+  id                  String      @id @default(uuid())
+  attemptId           String
+  questionId          String
+  selectedOptionIndex Int
+  isCorrect           Boolean
+  attempt             QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question            Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+model AIConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  courseId  String?
+  title     String      @default("Academic Discussion")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
+  course    Course?     @relation(fields: [courseId], references: [id])
+  user      User        @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+  messages  AIMessage[]
+
+  @@index([userId])
+  @@index([courseId])
+}
+
+model AIMessage {
+  id                 String         @id @default(uuid())
+  conversationId     String
+  sender             String
+  content            String
+  sources            Json?
+  suggestedFollowUps String[]       @default([])
+  createdAt          DateTime       @default(now())
+  conversation       AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model Document {
+  id               String           @id @default(uuid())
+  courseId         String
+  title            String
+  fileType         String           @default("pdf")
+  fileSize         String           @default("1.5 MB")
+  fileUrl          String?
+  processingStatus ProcessingStatus @default(READY)
+  ragChunksCount   Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(now()) @updatedAt
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+}
+
+model Performance {
+  id                   String   @id @default(uuid())
+  studentId            String
+  courseId             String
+  averageScore         Float    @default(0)
+  quizzesAttempted     Int      @default(0)
+  assignmentsSubmitted Int      @default(0)
+  lastCalculatedAt     DateTime @default(now())
+  course               Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student              User     @relation("StudentPerformances", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Recommendation {
+  id               String               @id @default(uuid())
+  studentId        String
+  courseId         String
+  title            String
+  topic            String
+  reason           String
+  type             RecommendationType   @default(PDF_NOTE)
+  estimatedMinutes Int                  @default(15)
+  resourceId       String?
+  status           RecommendationStatus @default(ACTIVE)
+  createdAt        DateTime             @default(now())
+  course           Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student          User                 @relation("StudentRecommendations", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model MaterialProgress {
+  id              String   @id @default(uuid())
+  studentId       String
+  materialId      String
+  currentPage     Int      @default(1)
+  totalPages      Int      @default(1)
+  progressPercent Float    @default(0)
+  completed       Boolean  @default(false)
+  lastOpenedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  material        Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  student         User     @relation("StudentMaterialProgress", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, materialId])
+  @@index([studentId])
+  @@index([materialId])
+}
+
+enum Role {
+  STUDENT
+  FACULTY
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
+enum ProcessingStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum AssignmentStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+  OVERDUE
+}
+
+enum Difficulty {
+  Easy
+  Medium
+  Hard
+}
+
+enum BloomsLevel {
+  Remember
+  Understand
+  Apply
+  Analyze
+  Evaluate
+}
+
+enum RecommendationType {
+  PDF_NOTE
+  QUIZ_RETEST
+  AI_PROMPT
+}
+
+enum RecommendationStatus {
+  ACTIVE
+  COMPLETED
+  DISMISSED
+}
+
+enum RiskLevel {
+  HIGH
+  MEDIUM
+  LOW
+}

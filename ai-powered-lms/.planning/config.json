@@ -1,0 +1,19 @@
+{
+  "projectName": "AURA LMS",
+  "projectType": "brownfield",
+  "version": "1.0.0",
+  "planningVersion": "2.0",
+  "primaryLanguage": "TypeScript",
+  "frameworks": {
+    "frontend": "Next.js 16 (App Router)",
+    "backend": "Express 5",
+    "database": "PostgreSQL 18 with pgvector 0.8",
+    "orm": "Prisma 7.9",
+    "ai": "@google/genai (gemini-3.7-flash + gemini-embedding-001)"
+  },
+  "workflow": {
+    "mode": "standard",
+    "strictGrounding": true,
+    "codebaseMapRegistered": true
+  }
+}

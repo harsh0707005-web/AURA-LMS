@@ -10,12 +10,24 @@
 
 Migrate learning-material PDF storage from the existing local filesystem implementation (`backend/uploads/materials/`) to an AWS S3 cloud object storage architecture while preserving 100% of existing functionality, security boundaries, and frontend contracts.
 
-### Core Architecture Pillars (Revised)
-- **Delivery Strategy**: Backend Proxy Stream. Express authenticates JWT, validates student course enrollment, pulls the private S3 object stream, and pipes it directly to the response. S3 bucket remains 100% private.
+### Core Architecture Pillars (Revised & Hardened)
+- **Delivery Strategy**: Backend Proxy Stream (`S3_DELIVERY_MODE=proxy`). Express authenticates JWT, validates student course enrollment, pulls the private S3 object stream, and pipes it directly to the response. S3 bucket remains 100% private.
 - **Frontend Compatibility**: `frontend/components/materials/PDFViewerModal.tsx` contract remains completely unchanged.
-- **fileUrl Semantics**: In PostgreSQL, `Material.fileUrl` stores the **storage object key** (e.g., `materials/courses/...`) or local legacy path (`/uploads/materials/...`), never a public browser URL.
+- **fileUrl Semantics**: In PostgreSQL, `Material.fileUrl` stores either a **local storage path** (e.g. `/uploads/materials/...`) or an **S3 object key** (e.g., `materials/courses/...`), never a public browser URL.
+- **No Silent Fallback**: When `S3_ENABLED=true` with broken or unconfigured S3, operations immediately fail with structured HTTP 503 errors rather than silently degrading to local storage.
+- **Rollback Invariant**: `S3_ENABLED=false` does NOT magically restore migrated S3 objects to local disk. A complete, 100% byte-size verified S3-to-local restore (`restore-materials-from-s3.ts`) must succeed before disabling S3. If any file fails to restore, `S3_ENABLED` must remain `true`.
+- **Migration Source Safety**: Migration never generates synthetic fallback PDFs for missing local source files. Missing source files are marked skipped/failed and reported without altering storage state.
+- **Canonical Environment Configuration**:
+  - `S3_ENABLED`: "true" | "false"
+  - `S3_BUCKET_NAME`: Canonical S3 bucket name
+  - `S3_REGION`: Canonical AWS region (default: "us-east-1")
+  - `AWS_ACCESS_KEY_ID`: Optional explicit IAM access key (defaults to SDK credential chain if omitted)
+  - `AWS_SECRET_ACCESS_KEY`: Optional explicit IAM secret key
+  - `S3_ENDPOINT`: Optional custom endpoint URL (for LocalStack, MinIO, or VPC endpoints)
+  - `S3_FORCE_PATH_STYLE`: "true" | "false" (for path-style S3 requests)
+  - `S3_DELIVERY_MODE`: "proxy" (default backend proxy streaming)
 - **Robust Consistency & Orphan Cleanup**: Multi-stage upload-ingestion pipeline with automatic compensation/orphan cleanup on partial failures.
-- **Idempotent Migration & Safe Rollback**: Resumable migration script with validation checks, automated reverse-migration procedure (`restore-materials-from-s3.ts`), and explicit path-format detection so `S3_ENABLED=false` never misidentifies cloud keys as local files.
+- **Idempotent Migration**: Resumable migration script checking byte-size equality between local and cloud objects.
 - **Memory Storage Guardrails**: Strict 25MB file limits, magic-byte inspection (`%PDF-`), and HTTP 413 error handling.
 
 ---
@@ -144,12 +156,14 @@ When `S3_ENABLED=false` (e.g. during an emergency rollback), `storage.service.ts
 If a full rollback from S3 to local filesystem is required:
 1. Run `npm run restore:s3` (`backend/src/scripts/restore-materials-from-s3.ts`).
 2. The script:
-   - Queries all `Material` records with `fileUrl` matching `materials/courses/*`.
+   - Queries `Material` records with `fileUrl` matching `materials/courses/*` (supports optional `--material-ids` filter for targeted/test rollbacks).
    - Downloads each object from AWS S3 via `GetObjectCommand`.
-   - Saves the file to `backend/uploads/materials/{material.id}-{filename}.pdf`.
-   - Updates `Material.fileUrl` in PostgreSQL to `/uploads/materials/{filename}.pdf`.
-   - Confirms local file exists on disk.
-3. Once restored, switch `.env` to `S3_ENABLED=false` and restart server.
+   - Obtains expected S3 `ContentLength`, strictly rejects missing/non-positive/invalid sizes, and performs exact byte-size verification against the downloaded file.
+   - Rejects empty files, missing/invalid ContentLength, or size mismatches; cleans up corrupt files without modifying database paths.
+   - Saves verified file to `backend/uploads/materials/{material.id}-{filename}.pdf`.
+   - Updates `Material.fileUrl` in PostgreSQL to `/uploads/materials/{material.id}-{filename}.pdf` **only after byte-size verification succeeds**.
+   - Assesses rollback status: if `failedCount > 0`, declares rollback INCOMPLETE/UNSAFE and warns that `S3_ENABLED` must remain `true`. Only when 100% of materials are restored does it recommend setting `S3_ENABLED=false`.
+3. Once 100% verified, switch `.env` to `S3_ENABLED=false` and restart server.
 4. Application availability is preserved throughout.
 
 ---
@@ -160,24 +174,26 @@ The migration script safely backfills existing local PDFs to S3:
 
 ### Step-by-Step Migration Algorithm
 ```typescript
-1. Fetch all Material records from PostgreSQL.
-2. Filter for records where fileUrl does NOT already start with "materials/courses/".
-3. For each material:
+1. Verify S3 configuration (S3_BUCKET_NAME, S3_REGION) via HeadBucketCommand.
+2. Fetch all Material records from PostgreSQL.
+3. Filter for records where fileUrl does NOT already start with "materials/courses/".
+4. For each material:
    a. Verify local source file exists on disk:
-      - Check candidate path in backend/uploads/materials/
-      - Check seed path in public/ or fallback generator
-      - If missing on disk, log warning [SKIP: LOCAL_MISSING] and continue.
+      - Resolve local path via LocalStorageProvider.resolveLocalPath(rawKey).
+      - Source Safety Invariant: NEVER synthesize educational fallback PDFs for missing migration files.
+      - If missing or 0 bytes on disk, log warning [SKIP: LOCAL_MISSING] and continue.
    b. Determine target S3 key:
       materials/courses/${material.courseId}/${material.id}/${sanitizedFilename}.pdf
-   c. Check if object already exists in S3 (HeadObjectCommand):
-      - If exists and size matches local file: Skip upload [ALREADY_EXISTS].
+   c. Idempotency Check (Byte-Size Match):
+      - Query S3 via HeadObjectCommand.
+      - If object exists and S3 ContentLength exactly matches local byte size: Skip upload [ALREADY_EXISTS: BYTE_SIZE_MATCH].
    d. Upload to S3 if missing or size mismatch:
       - PutObjectCommand with Body: fs.readFileSync(localPath), ContentType: "application/pdf"
-   e. Verify upload success via HeadObjectCommand.
+   e. Verify upload success immediately via HeadObjectCommand.
    f. Update PostgreSQL:
       prisma.material.update({ where: { id: material.id }, data: { fileUrl: s3Key } })
    g. Log [MIGRATED]: material.id -> s3Key.
-4. NEVER delete local files. Keep all local PDFs intact as permanent backups.
+5. NEVER delete local files. Keep all local PDFs intact as permanent backups.
 ```
 
 ---

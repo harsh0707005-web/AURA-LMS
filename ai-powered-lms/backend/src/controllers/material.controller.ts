@@ -1,4 +1,5 @@
 import { Response, NextFunction } from "express";
+import { pipeline } from "node:stream";
 import { AuthRequest } from "../types/auth.types.js";
 import { getParam } from "../lib/param.js";
 import {
@@ -57,10 +58,21 @@ export async function streamMaterialFile(req: AuthRequest, res: Response, next: 
     const fileInfo = await getMaterialFile(id, req.user.userId, req.user.role);
 
     const safeTitle = fileInfo.title.replace(/[^a-zA-Z0-9_-]/g, "_");
-    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Type", fileInfo.contentType || "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${safeTitle}.pdf"`);
+    if (fileInfo.contentLength) {
+      res.setHeader("Content-Length", fileInfo.contentLength);
+    }
 
-    res.sendFile(fileInfo.filePath);
+    pipeline(fileInfo.stream, res, (err) => {
+      if (err) {
+        if (!res.headersSent) {
+          next(err);
+        } else {
+          res.destroy(err);
+        }
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -155,14 +167,16 @@ export async function addMaterial(req: AuthRequest, res: Response, next: NextFun
       fileUrl: req.body?.fileUrl,
     };
 
-    const localFilePath = file ? file.path : undefined;
+    const fileBuffer = file?.buffer;
+    const originalFilename = file?.originalname;
 
     const material = await createMaterial(
       courseId,
       materialInput,
       req.user.userId,
       req.user.role,
-      localFilePath
+      fileBuffer,
+      originalFilename
     );
 
     res.status(201).json({

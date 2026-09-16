@@ -23,6 +23,13 @@ export interface RestoreResult {
   failed: number;
   reason?: string;
   details?: any;
+  guidance?: string;
+}
+
+export function getRestoreGuidance(isFiltered: boolean): string {
+  return isFiltered
+    ? "NOTE: This run was scoped to specific material IDs. Do NOT set S3_ENABLED=false until an unfiltered restore reports SUCCESS."
+    : "NEXT STEP: You may now safely set S3_ENABLED=false in your environment and restart the server.";
 }
 
 export async function restoreMaterialsFromS3(
@@ -61,7 +68,7 @@ export async function restoreMaterialsFromS3(
 
   // 2. Query materials to restore from S3 (support optional materialIds filter)
   let targetMaterialIds = options?.materialIds;
-  if (!targetMaterialIds) {
+  if (targetMaterialIds === undefined) {
     const idsArg = process.argv.find((arg) => arg.startsWith("--material-ids="));
     if (idsArg) {
       targetMaterialIds = idsArg
@@ -72,10 +79,24 @@ export async function restoreMaterialsFromS3(
     }
   }
 
-  const whereClause: any = {};
-  if (targetMaterialIds && targetMaterialIds.length > 0) {
-    whereClause.id = { in: targetMaterialIds };
+  const isFiltered = Array.isArray(targetMaterialIds);
+
+  if (Array.isArray(targetMaterialIds) && targetMaterialIds.length === 0) {
+    console.error(
+      "[ROLLBACK ERROR] Empty material ID filter provided; refusing restore operation without modifying database or disk."
+    );
+    return {
+      success: false,
+      total: 0,
+      restored: 0,
+      failed: 0,
+      reason: "EMPTY_MATERIAL_ID_FILTER",
+    };
   }
+
+  const whereClause: any = isFiltered && targetMaterialIds
+    ? { id: { in: targetMaterialIds } }
+    : {};
 
   const allMaterials = await prisma.material.findMany({
     where: whereClause,
@@ -272,10 +293,12 @@ export async function restoreMaterialsFromS3(
   console.log(`Failed Restorations:         ${failedCount}`);
   console.log(`Local Storage Directory:     ${uploadsDir}`);
 
+  let guidance: string | undefined;
   if (isFullSuccess) {
     console.log("STATUS: SUCCESS");
     console.log("All targeted S3 materials have been verified and restored to local disk.");
-    console.log("NEXT STEP: You may now safely set S3_ENABLED=false in your environment and restart the server.");
+    guidance = getRestoreGuidance(isFiltered);
+    console.log(guidance);
   } else {
     console.error("STATUS: INCOMPLETE / UNSAFE");
     console.error(`CRITICAL: ${failedCount} material(s) failed restoration or verification.`);
@@ -289,6 +312,7 @@ export async function restoreMaterialsFromS3(
     total: s3Materials.length,
     restored: restoredCount,
     failed: failedCount,
+    guidance,
   };
 }
 

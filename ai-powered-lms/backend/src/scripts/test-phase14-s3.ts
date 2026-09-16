@@ -8,7 +8,7 @@ import { LocalStorageProvider, isWithinRoot } from "../services/storage/local.st
 import { StorageService } from "../services/storage/storage.service.js";
 import { isValidPdfMagicBytes } from "../middleware/upload.middleware.js";
 import { getMaterialFile } from "../services/material.service.js";
-import { restoreMaterialsFromS3 } from "./restore-materials-from-s3.js";
+import { restoreMaterialsFromS3, getRestoreGuidance } from "./restore-materials-from-s3.js";
 
 interface TestReport {
   name: string;
@@ -481,23 +481,40 @@ export async function runPhase14Tests() {
       fs.mkdirSync(testTempDir7, { recursive: true });
     }
 
+    const expectedBytes = 100;
+    const fullMockS3: any = {
+      providerName: "s3",
+      isCloud: true,
+      getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
+      getBucketName: () => "mock-test-bucket",
+      getRegion: () => "us-east-1",
+      getFileStream: async () => ({
+        stream: Readable.from(Buffer.alloc(expectedBytes, "Z")),
+        contentLength: expectedBytes,
+        contentType: "application/pdf",
+      }),
+    };
+
+    // Guard 0: Explicit empty filter (materialIds: []) must be refused without modifying DB or files
+    const emptyFilterResult = await restoreMaterialsFromS3({
+      yes: true,
+      customUploadsDir: testTempDir7,
+      customS3Provider: fullMockS3,
+      materialIds: [],
+    });
+
+    const emptyRejected =
+      emptyFilterResult.success === false &&
+      emptyFilterResult.reason === "EMPTY_MATERIAL_ID_FILTER" &&
+      emptyFilterResult.total === 0 &&
+      emptyFilterResult.restored === 0;
+
     // Guard 1: Non-interactive execution without confirmation must safely abort without modifying DB or files
     // Strictly isolated to tempMaterialId7
     const unconfirmedResult = await restoreMaterialsFromS3({
       interactive: false,
       customUploadsDir: testTempDir7,
-      customS3Provider: {
-        providerName: "s3",
-        isCloud: true,
-        getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
-        getBucketName: () => "mock-test-bucket",
-        getRegion: () => "us-east-1",
-        getFileStream: async () => ({
-          stream: Readable.from(Buffer.alloc(100, "Z")),
-          contentLength: 100,
-          contentType: "application/pdf",
-        }),
-      },
+      customS3Provider: fullMockS3,
       materialIds: [tempMaterialId7],
       // yes and force intentionally omitted
     });
@@ -520,20 +537,6 @@ export async function runPhase14Tests() {
 
     // Guard 2: With confirmation (--yes) and matching byte sizes, restore completes cleanly
     // Strictly isolated to tempMaterialId7
-    const expectedBytes = 100;
-    const fullMockS3: any = {
-      providerName: "s3",
-      isCloud: true,
-      getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
-      getBucketName: () => "mock-test-bucket",
-      getRegion: () => "us-east-1",
-      getFileStream: async () => ({
-        stream: Readable.from(Buffer.alloc(expectedBytes, "Z")),
-        contentLength: expectedBytes,
-        contentType: "application/pdf",
-      }),
-    };
-
     const confirmedResult = await restoreMaterialsFromS3({
       yes: true,
       customUploadsDir: testTempDir7,
@@ -557,20 +560,47 @@ export async function runPhase14Tests() {
       confirmedResult.total === 1 &&
       confirmedResult.restored === 1;
 
+    // Verify filtered success guidance: does NOT recommend S3_ENABLED=false, prints scoped warning
+    const filteredGuidanceValid =
+      confirmedResult.guidance === getRestoreGuidance(true) &&
+      confirmedResult.guidance?.includes("Do NOT set S3_ENABLED=false until an unfiltered restore reports SUCCESS.") === true &&
+      confirmedResult.guidance?.includes("You may now safely set S3_ENABLED=false") === false;
+
+    // Guard 3: Verify unfiltered success guidance retains S3_ENABLED=false recommendation
+    const unfilteredGuidanceContract =
+      getRestoreGuidance(false) ===
+      "NEXT STEP: You may now safely set S3_ENABLED=false in your environment and restart the server.";
+
+    const unfilteredResult = await restoreMaterialsFromS3({
+      yes: true,
+      customUploadsDir: testTempDir7,
+      customS3Provider: fullMockS3,
+      materialIds: undefined,
+    });
+
+    const unfilteredGuidanceValid =
+      unfilteredGuidanceContract &&
+      unfilteredResult.success === true &&
+      unfilteredResult.guidance === getRestoreGuidance(false) &&
+      unfilteredResult.guidance?.includes("You may now safely set S3_ENABLED=false in your environment and restart the server.") === true;
+
     const rollbackPolicyValid =
+      emptyRejected &&
       guard1Passed &&
       fileExistsOnDisk &&
       bytesMatch &&
       dbUpdatedProperly &&
-      restoreSuccess;
+      restoreSuccess &&
+      filteredGuidanceValid &&
+      unfilteredGuidanceValid;
 
     if (rollbackPolicyValid) {
       recordTest({
         name: "Rollback Safety Policy: Incomplete Restores Enforce S3 Remaining Active",
         category: "UNIT",
         status: "PASS",
-        expected: "Unconfirmed run aborts safely with CONFIRMATION_REQUIRED, writes no files, changes no DB fileUrl; confirmed restore with matching bytes succeeds, writes verified file, and updates DB (isolated to test material)",
-        actual: `guard1Passed=${guard1Passed} (reason=${unconfirmedResult.reason}, total=${unconfirmedResult.total}, noFiles=${noFilesWritten}, urlUnchanged=${fileUrlUnchanged}); confirmedSuccess=${restoreSuccess} (total=${confirmedResult.total}, restored=${confirmedResult.restored}), bytesMatch=${bytesMatch} (${downloadedBytes}/${expectedBytes}), dbUpdated=${dbUpdatedProperly}`,
+        expected: "materialIds:[] rejected with EMPTY_MATERIAL_ID_FILTER; unconfirmed aborts safely; confirmed filtered restore succeeds with scoped guidance (no S3_ENABLED=false); unfiltered restore retains S3_ENABLED=false guidance",
+        actual: `emptyRejected=${emptyRejected}; guard1Passed=${guard1Passed} (reason=${unconfirmedResult.reason}, total=${unconfirmedResult.total}); confirmedSuccess=${restoreSuccess}, bytesMatch=${bytesMatch} (${downloadedBytes}/${expectedBytes}), dbUpdated=${dbUpdatedProperly}; filteredGuidanceValid=${filteredGuidanceValid}; unfilteredGuidanceValid=${unfilteredGuidanceValid}`,
       });
     } else {
       recordTest({
@@ -578,7 +608,7 @@ export async function runPhase14Tests() {
         category: "UNIT",
         status: "FAIL",
         expected: "Rollback safety invariants satisfied",
-        actual: `guard1Passed=${guard1Passed}, success=${confirmedResult.success}, total=${confirmedResult.total}, failed=${confirmedResult.failed}, fileExists=${fileExistsOnDisk}, bytesMatch=${bytesMatch}, dbUpdated=${dbUpdatedProperly}`,
+        actual: `emptyRejected=${emptyRejected}, guard1Passed=${guard1Passed}, success=${confirmedResult.success}, total=${confirmedResult.total}, failed=${confirmedResult.failed}, fileExists=${fileExistsOnDisk}, bytesMatch=${bytesMatch}, dbUpdated=${dbUpdatedProperly}, filteredGuidance=${filteredGuidanceValid}, unfilteredGuidance=${unfilteredGuidanceValid}`,
       });
     }
   } catch (err: any) {

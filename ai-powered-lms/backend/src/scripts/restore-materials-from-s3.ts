@@ -1,9 +1,19 @@
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
+import readline from "readline";
 import { pipeline } from "stream/promises";
 import prisma from "../lib/prisma.js";
 import { storageService } from "../services/storage/storage.service.js";
+
+export interface RestoreOptions {
+  yes?: boolean;
+  force?: boolean;
+  dryRun?: boolean;
+  customUploadsDir?: string;
+  customS3Provider?: any;
+  interactive?: boolean;
+}
 
 export interface RestoreResult {
   success: boolean;
@@ -14,12 +24,15 @@ export interface RestoreResult {
   details?: any;
 }
 
-export async function restoreMaterialsFromS3(): Promise<RestoreResult> {
+export async function restoreMaterialsFromS3(
+  options?: RestoreOptions
+): Promise<RestoreResult> {
   console.log("=================================================");
   console.log("AURA LMS: Reverse Migration (S3 to Local Rollback)");
   console.log("=================================================");
 
-  const s3Provider = storageService.getS3StorageProvider();
+  const s3Provider =
+    options?.customS3Provider || storageService.getS3StorageProvider();
 
   // 1. Verify S3 configuration and connectivity
   const s3Health = await s3Provider.getHealth();
@@ -38,7 +51,9 @@ export async function restoreMaterialsFromS3(): Promise<RestoreResult> {
     };
   }
 
-  const uploadsDir = path.resolve(process.cwd(), "uploads", "materials");
+  const uploadsDir =
+    options?.customUploadsDir ||
+    path.resolve(process.cwd(), "uploads", "materials");
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
@@ -59,6 +74,86 @@ export async function restoreMaterialsFromS3(): Promise<RestoreResult> {
     `[INFO] Found ${s3Materials.length} materials currently hosted on S3 to restore.`
   );
 
+  // 3. Dry-Run Handling
+  const isDryRun =
+    options?.dryRun || process.argv.includes("--dry-run");
+
+  if (isDryRun) {
+    console.log("\n[DRY RUN] Simulating restore operation without disk or database changes:");
+    for (const m of s3Materials) {
+      const rawFilename = path.basename(m.fileUrl!);
+      const sanitizedName = rawFilename.endsWith(".pdf") ? rawFilename : `${rawFilename}.pdf`;
+      const localFilename = `${m.id}-${sanitizedName}`;
+      console.log(` - Material "${m.title}" (${m.id})`);
+      console.log(`   Source S3:      ${m.fileUrl}`);
+      console.log(`   Target Local:   ${path.join(uploadsDir, localFilename)}`);
+      console.log(`   New fileUrl:    /uploads/materials/${localFilename}`);
+    }
+    console.log("[DRY RUN] Completed. No files were written and no database records were modified.\n");
+    return {
+      success: true,
+      total: s3Materials.length,
+      restored: 0,
+      failed: 0,
+      reason: "DRY_RUN",
+    };
+  }
+
+  // 4. Explicit Confirmation Guard
+  const isConfirmed =
+    options?.yes ||
+    options?.force ||
+    process.argv.includes("--yes") ||
+    process.argv.includes("-y") ||
+    process.argv.includes("--force") ||
+    process.argv.includes("-f");
+
+  if (!isConfirmed) {
+    const isInteractive =
+      options?.interactive !== undefined
+        ? options.interactive
+        : Boolean(process.stdin.isTTY);
+
+    if (isInteractive) {
+      const answer = await new Promise<string>((resolve) => {
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+        rl.question(
+          "\nCONFIRMATION REQUIRED: This will download all S3 materials to local disk and update database records.\nType 'yes' to proceed with rollback: ",
+          (resp) => {
+            rl.close();
+            resolve(resp.trim().toLowerCase());
+          }
+        );
+      });
+
+      if (answer !== "yes" && answer !== "y") {
+        console.log("Rollback aborted by user.");
+        return {
+          success: false,
+          total: s3Materials.length,
+          restored: 0,
+          failed: 0,
+          reason: "ABORTED_BY_USER",
+        };
+      }
+    } else {
+      console.error(
+        "Non-interactive environment detected. Confirmation required: pass --yes or --force to proceed with restore."
+      );
+      return {
+        success: false,
+        total: s3Materials.length,
+        restored: 0,
+        failed: 0,
+        reason: "CONFIRMATION_REQUIRED",
+      };
+    }
+  }
+
+  // 5. Execute Reverse Migration
   let restoredCount = 0;
   let failedCount = 0;
 
@@ -76,14 +171,14 @@ export async function restoreMaterialsFromS3(): Promise<RestoreResult> {
         `[DOWNLOADING] s3://${s3Provider.getBucketName()}/${s3Key} -> ${targetLocalPath}`
       );
 
-      // 3. Download stream from S3 and capture expected content length
+      // Download stream from S3 and capture expected content length
       const fileStream = await s3Provider.getFileStream(s3Key);
       const expectedSize = fileStream.contentLength;
 
       const writeStream = fs.createWriteStream(targetLocalPath);
       await pipeline(fileStream.stream, writeStream);
 
-      // 4. Verification Check: file exists, is not empty, and size matches S3 ContentLength
+      // Verification Check: file exists, is not empty, and size matches S3 ContentLength
       if (!fs.existsSync(targetLocalPath)) {
         throw new Error(
           `Downloaded file was not found on disk at: ${targetLocalPath}`
@@ -111,7 +206,7 @@ export async function restoreMaterialsFromS3(): Promise<RestoreResult> {
         );
       }
 
-      // 5. Update PostgreSQL record ONLY after successful verification
+      // Update PostgreSQL record ONLY after successful verification
       const localUrl = `/uploads/materials/${localFilename}`;
       await prisma.material.update({
         where: { id: material.id },

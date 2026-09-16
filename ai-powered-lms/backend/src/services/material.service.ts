@@ -5,8 +5,6 @@ import { CreateMaterialInput } from "../types/academic.types.js";
 import { ingestMaterialPdf } from "./ingestion.service.js";
 import { storageService } from "./storage/storage.service.js";
 
-const uploadsDir = path.resolve(process.cwd(), "uploads", "materials");
-
 export async function getMaterialsByCourse(courseId: string, studentId?: string) {
   const materials = await prisma.material.findMany({
     where: { courseId },
@@ -128,95 +126,6 @@ export async function getMaterialFile(materialId: string, userId: string, role: 
     unit: material.unit,
     fileType: material.fileType || "pdf",
   };
-}
-
-/**
- * Generates a valid standard PDF 1.4 file buffer.
- */
-function createFallbackPdf(title: string, unit: string): Buffer {
-  const sanitizedTitle = title.replace(/[()\\]/g, "");
-  const sanitizedUnit = unit.replace(/[()\\]/g, "");
-  
-  const content = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 9 0 R >> >> >>
-endobj
-4 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R /Resources << /Font << /F1 9 0 R >> >> >>
-endobj
-5 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 9 0 R >> >> >>
-endobj
-6 0 obj
-<< /Length 210 >>
-stream
-BT
-/F1 22 Tf
-50 720 Td
-(${sanitizedTitle}) Tj
-/F1 14 Tf
-0 -40 Td
-(${sanitizedUnit} - Academic Course Material) Tj
-/F1 11 Tf
-0 -40 Td
-(Section 1: Theoretical Foundations and Architecture Overview.) Tj
-ET
-endstream
-endobj
-7 0 obj
-<< /Length 190 >>
-stream
-BT
-/F1 18 Tf
-50 720 Td
-(${sanitizedUnit}: Core Principles and Implementations) Tj
-/F1 11 Tf
-0 -40 Td
-(Section 2: Detailed Protocol Invariants, Invariants and Verification.) Tj
-ET
-endstream
-endobj
-8 0 obj
-<< /Length 180 >>
-stream
-BT
-/F1 18 Tf
-50 720 Td
-(${sanitizedUnit}: Evaluation and Advanced Topics) Tj
-/F1 11 Tf
-0 -40 Td
-(Section 3: Practical Experiments, Analysis and Assessment Tasks.) Tj
-ET
-endstream
-endobj
-9 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-xref
-0 10
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000133 00000 n 
-0000000257 00000 n 
-0000000381 00000 n 
-0000000505 00000 n 
-0000000768 00000 n 
-0000001011 00000 n 
-0000001244 00000 n 
-trailer
-<< /Size 10 /Root 1 0 R >>
-startxref
-1325
-%%EOF`;
-
-  return Buffer.from(content, "utf-8");
 }
 
 /**
@@ -478,8 +387,24 @@ export async function createMaterial(
       });
       return readyMaterial;
     } catch (dbError: any) {
-      // Scenario 3: Final DB update fails -> delete storage object
-      await storageService.deleteFile(storageKey).catch(() => {});
+      // Scenario 3: Final DB update fails -> delete storage object, delete orphaned chunks, mark FAILED
+      await storageService.deleteFile(storageKey).catch((delErr) => {
+        console.error(`[STORAGE COMPENSATION ERROR] Failed to delete orphaned object ${storageKey}:`, delErr);
+      });
+
+      await prisma.documentChunk.deleteMany({
+        where: { materialId: material.id },
+      }).catch((chunkErr) => {
+        console.error(`[CLEANUP ERROR] Failed to delete document chunks for material ${material.id}:`, chunkErr);
+      });
+
+      await prisma.material.update({
+        where: { id: material.id },
+        data: { processingStatus: "FAILED" },
+      }).catch((statusErr) => {
+        console.error(`[STATUS UPDATE ERROR] Failed to mark material ${material.id} as FAILED:`, statusErr);
+      });
+
       throw dbError;
     }
   }

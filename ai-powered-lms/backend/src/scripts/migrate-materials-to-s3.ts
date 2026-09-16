@@ -169,7 +169,15 @@ export async function migrateMaterialsToS3(): Promise<MigrationResult> {
     }
   }
 
-  const isSuccess = failedCount === 0;
+  const isSuccess = failedCount === 0 && skippedMissingCount === 0;
+  let reason: string | undefined = undefined;
+  if (!isSuccess) {
+    if (failedCount > 0) {
+      reason = "FAILED_MIGRATIONS";
+    } else if (skippedMissingCount > 0) {
+      reason = "INCOMPLETE_SKIPPED_SOURCES";
+    }
+  }
 
   console.log("\n=================================================");
   console.log("Migration Summary Report:");
@@ -178,6 +186,7 @@ export async function migrateMaterialsToS3(): Promise<MigrationResult> {
   console.log(`Already Present (Size Match):${alreadyExistsCount}`);
   console.log(`Skipped (Missing on Disk):  ${skippedMissingCount}`);
   console.log(`Failed Migrations:          ${failedCount}`);
+  console.log(`Status:                     ${isSuccess ? "COMPLETE" : "INCOMPLETE"}${reason ? ` (${reason})` : ""}`);
   console.log("Local backup files on disk: 100% preserved");
   console.log("=================================================\n");
 
@@ -188,6 +197,7 @@ export async function migrateMaterialsToS3(): Promise<MigrationResult> {
     alreadyExists: alreadyExistsCount,
     skippedMissing: skippedMissingCount,
     failed: failedCount,
+    reason,
   };
 }
 

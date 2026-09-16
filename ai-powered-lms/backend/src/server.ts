@@ -45,13 +45,79 @@ app.use(express.json());
 
 import { storageService } from "./services/storage/storage.service.js";
 
+// Storage Health Cache & Timeout Protection
+interface CachedStorageHealth {
+  provider: "local" | "s3";
+  healthy: boolean;
+  timestamp: number;
+}
+
+let storageHealthCache: CachedStorageHealth | null = null;
+const STORAGE_HEALTH_CACHE_TTL_MS = 10000; // 10 seconds cache
+const STORAGE_HEALTH_TIMEOUT_MS = 2000; // 2 seconds timeout
+
+async function checkStorageHealthWithTimeout(): Promise<{ provider: "local" | "s3"; healthy: boolean }> {
+  const providerName = storageService.getActiveProviderName() === "s3" ? "s3" : "local";
+
+  let timer: NodeJS.Timeout | null = null;
+  const timeoutPromise = new Promise<{ provider: "local" | "s3"; healthy: boolean }>((resolve) => {
+    timer = setTimeout(() => {
+      console.warn(`[HEALTH CHECK TIMEOUT] Storage health check timed out after ${STORAGE_HEALTH_TIMEOUT_MS}ms`);
+      resolve({ provider: providerName, healthy: false });
+    }, STORAGE_HEALTH_TIMEOUT_MS);
+  });
+
+  const checkPromise = (async (): Promise<{ provider: "local" | "s3"; healthy: boolean }> => {
+    try {
+      const health = await storageService.getHealth();
+      return {
+        provider: providerName,
+        healthy: Boolean(health?.healthy),
+      };
+    } catch (err: any) {
+      console.error("[HEALTH CHECK ERROR] Storage health probe failed:", err);
+      return { provider: providerName, healthy: false };
+    }
+  })();
+
+  try {
+    return await Promise.race([checkPromise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function getCachedStorageHealth(): Promise<{ provider: "local" | "s3"; healthy: boolean }> {
+  const now = Date.now();
+  const currentProvider = storageService.getActiveProviderName() === "s3" ? "s3" : "local";
+
+  if (
+    storageHealthCache &&
+    storageHealthCache.provider === currentProvider &&
+    now - storageHealthCache.timestamp < STORAGE_HEALTH_CACHE_TTL_MS
+  ) {
+    return {
+      provider: storageHealthCache.provider,
+      healthy: storageHealthCache.healthy,
+    };
+  }
+
+  const result = await checkStorageHealthWithTimeout();
+  storageHealthCache = {
+    provider: result.provider,
+    healthy: result.healthy,
+    timestamp: now,
+  };
+
+  return {
+    provider: result.provider,
+    healthy: result.healthy,
+  };
+}
+
 // Health Check Endpoints
 app.get("/api/health", async (_req, res) => {
-  const storageHealth = await storageService.getHealth().catch((err) => ({
-    provider: storageService.getActiveProviderName(),
-    healthy: false,
-    details: { error: err?.message },
-  }));
+  const storageHealth = await getCachedStorageHealth();
 
   res.status(200).json({
     success: true,

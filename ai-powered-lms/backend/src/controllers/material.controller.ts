@@ -1,4 +1,5 @@
 import { Response, NextFunction } from "express";
+import { pipeline } from "node:stream";
 import { AuthRequest } from "../types/auth.types.js";
 import { getParam } from "../lib/param.js";
 import {
@@ -63,13 +64,15 @@ export async function streamMaterialFile(req: AuthRequest, res: Response, next: 
       res.setHeader("Content-Length", fileInfo.contentLength);
     }
 
-    fileInfo.stream.on("error", (streamErr) => {
-      if (!res.headersSent) {
-        next(streamErr);
+    pipeline(fileInfo.stream, res, (err) => {
+      if (err) {
+        if (!res.headersSent) {
+          next(err);
+        } else {
+          res.destroy(err);
+        }
       }
     });
-
-    fileInfo.stream.pipe(res);
   } catch (error) {
     next(error);
   }

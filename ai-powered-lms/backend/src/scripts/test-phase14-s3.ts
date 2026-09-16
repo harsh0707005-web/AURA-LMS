@@ -2,13 +2,13 @@ import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import { Readable } from "stream";
-import { pipeline } from "stream/promises";
 import prisma from "../lib/prisma.js";
 import { S3StorageProvider } from "../services/storage/s3.storage.js";
 import { LocalStorageProvider } from "../services/storage/local.storage.js";
 import { StorageService } from "../services/storage/storage.service.js";
 import { isValidPdfMagicBytes } from "../middleware/upload.middleware.js";
 import { getMaterialFile } from "../services/material.service.js";
+import { restoreMaterialsFromS3 } from "./restore-materials-from-s3.js";
 
 interface TestReport {
   name: string;
@@ -248,9 +248,9 @@ export async function runPhase14Tests() {
   // ============================================================================
   // TEST 5: Offline Mode with S3 Keys (S3_ENABLED=false) -> HTTP 503
   // ============================================================================
+  const originalS3Enabled = process.env.S3_ENABLED;
   try {
     // Force S3_ENABLED=false
-    const originalS3Enabled = process.env.S3_ENABLED;
     process.env.S3_ENABLED = "false";
 
     const svc = new StorageService();
@@ -265,8 +265,6 @@ export async function runPhase14Tests() {
       got503 = err.statusCode === 503;
       errorMessage = err.message;
     }
-
-    process.env.S3_ENABLED = originalS3Enabled;
 
     if (got503 && errorMessage.includes("Material is stored in cloud S3, but S3 storage is currently disabled")) {
       recordTest({
@@ -293,48 +291,89 @@ export async function runPhase14Tests() {
       expected: "Executes without uncaught exception",
       actual: err?.message || String(err),
     });
+  } finally {
+    if (originalS3Enabled !== undefined) {
+      process.env.S3_ENABLED = originalS3Enabled;
+    } else {
+      delete process.env.S3_ENABLED;
+    }
   }
 
   // ============================================================================
   // TEST 6: Restore Verification: Byte-Size Mismatch Handling
   // ============================================================================
+  const testTempDir6 = path.resolve(process.cwd(), "uploads", `temp-test-restore-6-${Date.now()}`);
+  let tempMaterialId6: string | null = null;
+  const tempS3Key6 = `materials/courses/course-test-roll/temp-mat-6-${Date.now()}/lecture.pdf`;
+
   try {
-    const testTempDir = path.resolve(process.cwd(), "uploads", "materials");
-    if (!fs.existsSync(testTempDir)) {
-      fs.mkdirSync(testTempDir, { recursive: true });
+    const course = await prisma.course.findFirst();
+    if (!course) {
+      throw new Error("Cannot execute Test 6: no course found in database");
     }
 
-    const testLocalPath = path.join(testTempDir, "test-mismatch.pdf");
-    // Write 100 bytes locally
-    fs.writeFileSync(testLocalPath, Buffer.alloc(100, "A"));
+    await prisma.material.deleteMany({ where: { id: { startsWith: "test-mat-" } } }).catch(() => {});
 
-    const expectedS3Size = 500; // S3 reports 500 bytes, but local is 100 bytes
-    const localSize = fs.statSync(testLocalPath).size;
+    tempMaterialId6 = `test-mat-6-${Date.now()}`;
+    await prisma.material.create({
+      data: {
+        id: tempMaterialId6,
+        courseId: course.id,
+        title: "Test Material Byte Mismatch",
+        unit: "Unit 1",
+        fileUrl: tempS3Key6,
+        processingStatus: "READY",
+        fileSize: "500 B",
+      },
+    });
 
-    let mismatchDetected = false;
-    if (localSize !== expectedS3Size) {
-      mismatchDetected = true;
-      // Compensation: remove corrupt file
-      fs.unlinkSync(testLocalPath);
+    if (!fs.existsSync(testTempDir6)) {
+      fs.mkdirSync(testTempDir6, { recursive: true });
     }
 
-    const fileCleanedUp = !fs.existsSync(testLocalPath);
+    // Mock S3 provider where GetObject returns a short stream (50 bytes) while ContentLength is 500
+    const mockS3Provider: any = {
+      providerName: "s3",
+      isCloud: true,
+      getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
+      getBucketName: () => "mock-test-bucket",
+      getRegion: () => "us-east-1",
+      getFileStream: async () => ({
+        stream: Readable.from(Buffer.alloc(50, "P")),
+        contentLength: 500, // Discrepancy: reported 500 bytes, stream only 50 bytes
+        contentType: "application/pdf",
+      }),
+    };
 
-    if (mismatchDetected && fileCleanedUp) {
+    const restoreResult = await restoreMaterialsFromS3({
+      yes: true,
+      customUploadsDir: testTempDir6,
+      customS3Provider: mockS3Provider,
+    });
+
+    const expectedCorruptFile = path.join(testTempDir6, `${tempMaterialId6}-lecture.pdf`);
+    const fileCleanedUp = !fs.existsSync(expectedCorruptFile);
+
+    const updatedMaterial = await prisma.material.findUnique({
+      where: { id: tempMaterialId6 },
+    });
+    const dbNotUpdated = updatedMaterial?.fileUrl === tempS3Key6;
+
+    if (restoreResult.failed > 0 && restoreResult.success === false && fileCleanedUp && dbNotUpdated) {
       recordTest({
         name: "Reverse Migration (Restore) Byte-Size Mismatch Guard",
         category: "UNIT",
         status: "PASS",
-        expected: "Detects byte-size discrepancy between S3 expected size and downloaded file; cleans up corrupt file",
-        actual: `Detected mismatch (local ${localSize} bytes != S3 ${expectedS3Size} bytes); corrupt file cleaned up: ${fileCleanedUp}`,
+        expected: "Detects byte-size discrepancy between S3 expected size and downloaded file; cleans up corrupt file; leaves DB fileUrl unchanged; reports failure",
+        actual: `failed=${restoreResult.failed}, success=${restoreResult.success}, corruptFileCleanedUp=${fileCleanedUp}, dbFileUrlPreserved=${dbNotUpdated}`,
       });
     } else {
       recordTest({
         name: "Reverse Migration (Restore) Byte-Size Mismatch Guard",
         category: "UNIT",
         status: "FAIL",
-        expected: "Detects size mismatch and removes corrupt file",
-        actual: `mismatchDetected=${mismatchDetected}, fileCleanedUp=${fileCleanedUp}`,
+        expected: "failed > 0, success === false, corrupt file removed, db not updated",
+        actual: `failed=${restoreResult.failed}, success=${restoreResult.success}, corruptFileCleanedUp=${fileCleanedUp}, dbFileUrlPreserved=${dbNotUpdated}`,
       });
     }
   } catch (err: any) {
@@ -345,39 +384,140 @@ export async function runPhase14Tests() {
       expected: "Executes without uncaught exception",
       actual: err?.message || String(err),
     });
+  } finally {
+    if (tempMaterialId6) {
+      await prisma.material.delete({ where: { id: tempMaterialId6 } }).catch(() => {});
+    }
+    if (fs.existsSync(testTempDir6)) {
+      try {
+        fs.rmSync(testTempDir6, { recursive: true, force: true });
+      } catch {}
+    }
   }
 
   // ============================================================================
   // TEST 7: Rollback Safety: Incomplete Restoration Enforces S3 Remaining Enabled
   // ============================================================================
+  const testTempDir7 = path.resolve(process.cwd(), "uploads", `temp-test-restore-7-${Date.now()}`);
+  let tempMaterialId7: string | null = null;
+  const tempS3Key7 = `materials/courses/course-test-roll/temp-mat-7-${Date.now()}/verified.pdf`;
+
   try {
-    // Simulate rollback result evaluation
-    const simulatedFailures: number = 2;
-    const simulatedRestored: number = 5;
-    const simulatedTotal: number = 7;
+    const course = await prisma.course.findFirst();
+    if (!course) {
+      throw new Error("Cannot execute Test 7: no course found in database");
+    }
 
-    const isRollbackComplete =
-      simulatedFailures === 0 && simulatedRestored === simulatedTotal;
+    await prisma.material.deleteMany({ where: { id: { startsWith: "test-mat-" } } }).catch(() => {});
 
-    const recommendation = isRollbackComplete
-      ? "SAFE_TO_DISABLE_S3"
-      : "MUST_KEEP_S3_ENABLED";
+    tempMaterialId7 = `test-mat-7-${Date.now()}`;
+    await prisma.material.create({
+      data: {
+        id: tempMaterialId7,
+        courseId: course.id,
+        title: "Test Material Rollback Invariant",
+        unit: "Unit 2",
+        fileUrl: tempS3Key7,
+        processingStatus: "READY",
+        fileSize: "100 B",
+      },
+    });
 
-    if (!isRollbackComplete && recommendation === "MUST_KEEP_S3_ENABLED") {
+    if (!fs.existsSync(testTempDir7)) {
+      fs.mkdirSync(testTempDir7, { recursive: true });
+    }
+
+    // Guard 1: Non-interactive execution without confirmation must safely abort without modifying DB or files
+    const unconfirmedResult = await restoreMaterialsFromS3({
+      interactive: false,
+      customUploadsDir: testTempDir7,
+      customS3Provider: {
+        providerName: "s3",
+        isCloud: true,
+        getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
+        getBucketName: () => "mock-test-bucket",
+        getRegion: () => "us-east-1",
+        getFileStream: async () => ({
+          stream: Readable.from(Buffer.alloc(100, "Z")),
+          contentLength: 100,
+          contentType: "application/pdf",
+        }),
+      },
+      // yes and force intentionally omitted
+    });
+
+    const unconfirmedFailed = unconfirmedResult.success === false;
+    const reasonMatches = unconfirmedResult.reason === "CONFIRMATION_REQUIRED";
+    const noFilesWritten = !fs.existsSync(testTempDir7) || fs.readdirSync(testTempDir7).length === 0;
+    const materialAfterUnconfirmed = await prisma.material.findUnique({
+      where: { id: tempMaterialId7 },
+    });
+    const fileUrlUnchanged = materialAfterUnconfirmed?.fileUrl === tempS3Key7;
+
+    const guard1Passed =
+      unconfirmedFailed &&
+      reasonMatches &&
+      noFilesWritten &&
+      fileUrlUnchanged;
+
+    // Guard 2: With confirmation (--yes) and matching byte sizes, restore completes cleanly
+    const expectedBytes = 100;
+    const fullMockS3: any = {
+      providerName: "s3",
+      isCloud: true,
+      getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
+      getBucketName: () => "mock-test-bucket",
+      getRegion: () => "us-east-1",
+      getFileStream: async () => ({
+        stream: Readable.from(Buffer.alloc(expectedBytes, "Z")),
+        contentLength: expectedBytes,
+        contentType: "application/pdf",
+      }),
+    };
+
+    const confirmedResult = await restoreMaterialsFromS3({
+      yes: true,
+      customUploadsDir: testTempDir7,
+      customS3Provider: fullMockS3,
+    });
+
+    const expectedRestoredFile = path.join(testTempDir7, `${tempMaterialId7}-verified.pdf`);
+    const fileExistsOnDisk = fs.existsSync(expectedRestoredFile);
+    const downloadedBytes = fileExistsOnDisk ? fs.statSync(expectedRestoredFile).size : -1;
+    const bytesMatch = downloadedBytes === expectedBytes;
+
+    const updatedMaterial = await prisma.material.findUnique({
+      where: { id: tempMaterialId7 },
+    });
+    const expectedLocalUrl = `/uploads/materials/${tempMaterialId7}-verified.pdf`;
+    const dbUpdatedProperly = updatedMaterial?.fileUrl === expectedLocalUrl;
+    const restoreSuccess =
+      confirmedResult.success === true &&
+      confirmedResult.failed === 0 &&
+      confirmedResult.restored >= 1;
+
+    const rollbackPolicyValid =
+      guard1Passed &&
+      fileExistsOnDisk &&
+      bytesMatch &&
+      dbUpdatedProperly &&
+      restoreSuccess;
+
+    if (rollbackPolicyValid) {
       recordTest({
         name: "Rollback Safety Policy: Incomplete Restores Enforce S3 Remaining Active",
         category: "UNIT",
         status: "PASS",
-        expected: "failedCount > 0 prevents setting S3_ENABLED=false and flags rollback as incomplete/unsafe",
-        actual: `simulatedFailures=${simulatedFailures} -> isRollbackComplete=${isRollbackComplete}, policy=${recommendation}`,
+        expected: "Unconfirmed run aborts safely with CONFIRMATION_REQUIRED, writes no files, changes no DB fileUrl; confirmed restore with matching bytes succeeds, writes verified file, and updates DB",
+        actual: `guard1Passed=${guard1Passed} (reason=${unconfirmedResult.reason}, noFiles=${noFilesWritten}, urlUnchanged=${fileUrlUnchanged}); confirmedSuccess=${restoreSuccess}, bytesMatch=${bytesMatch} (${downloadedBytes}/${expectedBytes}), dbUpdated=${dbUpdatedProperly}`,
       });
     } else {
       recordTest({
         name: "Rollback Safety Policy: Incomplete Restores Enforce S3 Remaining Active",
         category: "UNIT",
         status: "FAIL",
-        expected: "Refuses disabling S3 when failedCount > 0",
-        actual: `isRollbackComplete=${isRollbackComplete}`,
+        expected: "Rollback safety invariants satisfied",
+        actual: `guard1Passed=${guard1Passed}, success=${confirmedResult.success}, failed=${confirmedResult.failed}, fileExists=${fileExistsOnDisk}, bytesMatch=${bytesMatch}, dbUpdated=${dbUpdatedProperly}`,
       });
     }
   } catch (err: any) {
@@ -388,6 +528,15 @@ export async function runPhase14Tests() {
       expected: "Executes without error",
       actual: err?.message || String(err),
     });
+  } finally {
+    if (tempMaterialId7) {
+      await prisma.material.delete({ where: { id: tempMaterialId7 } }).catch(() => {});
+    }
+    if (fs.existsSync(testTempDir7)) {
+      try {
+        fs.rmSync(testTempDir7, { recursive: true, force: true });
+      } catch {}
+    }
   }
 
   // ============================================================================
@@ -568,7 +717,7 @@ export async function runPhase14Tests() {
   // TEST 11: Live AWS S3 Bucket Connectivity (Conditional on Real Credentials)
   // ============================================================================
   try {
-    const bucketName = process.env.S3_BUCKET_NAME || process.env.AWS_S3_BUCKET;
+    const bucketName = process.env.S3_BUCKET_NAME;
     const hasAwsKey = !!(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE);
 
     if (bucketName && hasAwsKey) {

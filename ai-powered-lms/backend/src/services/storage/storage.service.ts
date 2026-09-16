@@ -76,7 +76,7 @@ export class StorageService {
       const s3Key = this.generateS3Key(courseId, materialId, filename);
       return await this.s3Provider.uploadFile(s3Key, buffer, options);
     } else {
-      const sanitizedFilename = `${Date.now()}-${Math.round(Math.random() * 1e4)}-${filename.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const sanitizedFilename = `${materialId}-${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
       return await this.localProvider.uploadFile(sanitizedFilename, buffer, options);
     }
   }

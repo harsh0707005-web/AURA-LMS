@@ -161,7 +161,7 @@ If a full rollback from S3 to local filesystem is required:
    - Obtains expected S3 `ContentLength` and performs byte-size comparison against the downloaded file.
    - Rejects empty files or size mismatches; cleans up corrupt files without modifying database paths.
    - Saves verified file to `backend/uploads/materials/{material.id}-{filename}.pdf`.
-   - Updates `Material.fileUrl` in PostgreSQL to `/uploads/materials/{filename}.pdf` **only after byte-size verification succeeds**.
+   - Updates `Material.fileUrl` in PostgreSQL to `/uploads/materials/{material.id}-{filename}.pdf` **only after byte-size verification succeeds**.
    - Assesses rollback status: if `failedCount > 0`, declares rollback INCOMPLETE/UNSAFE and warns that `S3_ENABLED` must remain `true`. Only when 100% of materials are restored does it recommend setting `S3_ENABLED=false`.
 3. Once 100% verified, switch `.env` to `S3_ENABLED=false` and restart server.
 4. Application availability is preserved throughout.

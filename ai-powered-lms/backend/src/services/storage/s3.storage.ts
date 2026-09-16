@@ -267,7 +267,10 @@ export class S3StorageProvider implements IStorageProvider {
       ) {
         return false;
       }
-      throw error;
+      throw Object.assign(
+        new Error(`Failed to check object existence in cloud storage: ${error?.message || "Unknown error"}`),
+        { statusCode: 503, cause: error }
+      );
     }
   }
 
@@ -299,7 +302,10 @@ export class S3StorageProvider implements IStorageProvider {
           { statusCode: 404 }
         );
       }
-      throw error;
+      throw Object.assign(
+        new Error(`Failed to get object metadata from cloud storage: ${error?.message || "Unknown error"}`),
+        { statusCode: 503, cause: error }
+      );
     }
   }
 

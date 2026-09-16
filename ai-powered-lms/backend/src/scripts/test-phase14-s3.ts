@@ -4,7 +4,7 @@ import path from "path";
 import { Readable } from "stream";
 import prisma from "../lib/prisma.js";
 import { S3StorageProvider } from "../services/storage/s3.storage.js";
-import { LocalStorageProvider } from "../services/storage/local.storage.js";
+import { LocalStorageProvider, isWithinRoot } from "../services/storage/local.storage.js";
 import { StorageService } from "../services/storage/storage.service.js";
 import { isValidPdfMagicBytes } from "../middleware/upload.middleware.js";
 import { getMaterialFile } from "../services/material.service.js";
@@ -300,7 +300,7 @@ export async function runPhase14Tests() {
   }
 
   // ============================================================================
-  // TEST 6: Restore Verification: Byte-Size Mismatch Handling
+  // TEST 6: Restore Verification: S3 ContentLength Validation & Mismatch Guard
   // ============================================================================
   const testTempDir6 = path.resolve(process.cwd(), "uploads", `temp-test-restore-6-${Date.now()}`);
   let tempMaterialId6: string | null = null;
@@ -331,8 +331,10 @@ export async function runPhase14Tests() {
       fs.mkdirSync(testTempDir6, { recursive: true });
     }
 
-    // Mock S3 provider where GetObject returns a short stream (50 bytes) while ContentLength is 500
-    const mockS3Provider: any = {
+    const expectedCorruptFile = path.join(testTempDir6, `${tempMaterialId6}-lecture.pdf`);
+
+    // Subtest 1: Byte-size mismatch (reported 500 bytes, stream only 50 bytes)
+    const mismatchMockS3: any = {
       providerName: "s3",
       isCloud: true,
       getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
@@ -340,45 +342,97 @@ export async function runPhase14Tests() {
       getRegion: () => "us-east-1",
       getFileStream: async () => ({
         stream: Readable.from(Buffer.alloc(50, "P")),
-        contentLength: 500, // Discrepancy: reported 500 bytes, stream only 50 bytes
+        contentLength: 500,
         contentType: "application/pdf",
       }),
     };
 
-    const restoreResult = await restoreMaterialsFromS3({
+    const mismatchResult = await restoreMaterialsFromS3({
       yes: true,
       customUploadsDir: testTempDir6,
-      customS3Provider: mockS3Provider,
+      customS3Provider: mismatchMockS3,
+      materialIds: [tempMaterialId6],
     });
 
-    const expectedCorruptFile = path.join(testTempDir6, `${tempMaterialId6}-lecture.pdf`);
-    const fileCleanedUp = !fs.existsSync(expectedCorruptFile);
+    const mismatchCleanedUp = !fs.existsSync(expectedCorruptFile);
+    const dbAfterMismatch = await prisma.material.findUnique({ where: { id: tempMaterialId6 } });
+    const mismatchDbUntouched = dbAfterMismatch?.fileUrl === tempS3Key6;
+    const subtest1Passed = mismatchResult.failed > 0 && mismatchResult.success === false && mismatchCleanedUp && mismatchDbUntouched;
 
-    const updatedMaterial = await prisma.material.findUnique({
-      where: { id: tempMaterialId6 },
+    // Subtest 2: Missing ContentLength (undefined)
+    const missingLenMockS3: any = {
+      providerName: "s3",
+      isCloud: true,
+      getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
+      getBucketName: () => "mock-test-bucket",
+      getRegion: () => "us-east-1",
+      getFileStream: async () => ({
+        stream: Readable.from(Buffer.alloc(50, "P")),
+        contentLength: undefined as any,
+        contentType: "application/pdf",
+      }),
+    };
+
+    const missingResult = await restoreMaterialsFromS3({
+      yes: true,
+      customUploadsDir: testTempDir6,
+      customS3Provider: missingLenMockS3,
+      materialIds: [tempMaterialId6],
     });
-    const dbNotUpdated = updatedMaterial?.fileUrl === tempS3Key6;
 
-    if (restoreResult.failed > 0 && restoreResult.success === false && fileCleanedUp && dbNotUpdated) {
+    const missingCleanedUp = !fs.existsSync(expectedCorruptFile);
+    const dbAfterMissing = await prisma.material.findUnique({ where: { id: tempMaterialId6 } });
+    const missingDbUntouched = dbAfterMissing?.fileUrl === tempS3Key6;
+    const subtest2Passed = missingResult.failed > 0 && missingResult.success === false && missingCleanedUp && missingDbUntouched;
+
+    // Subtest 3: Zero ContentLength (0)
+    const zeroLenMockS3: any = {
+      providerName: "s3",
+      isCloud: true,
+      getHealth: async () => ({ healthy: true, details: { bucket: "mock-test-bucket" } }),
+      getBucketName: () => "mock-test-bucket",
+      getRegion: () => "us-east-1",
+      getFileStream: async () => ({
+        stream: Readable.from(Buffer.alloc(50, "P")),
+        contentLength: 0,
+        contentType: "application/pdf",
+      }),
+    };
+
+    const zeroResult = await restoreMaterialsFromS3({
+      yes: true,
+      customUploadsDir: testTempDir6,
+      customS3Provider: zeroLenMockS3,
+      materialIds: [tempMaterialId6],
+    });
+
+    const zeroCleanedUp = !fs.existsSync(expectedCorruptFile);
+    const dbAfterZero = await prisma.material.findUnique({ where: { id: tempMaterialId6 } });
+    const zeroDbUntouched = dbAfterZero?.fileUrl === tempS3Key6;
+    const subtest3Passed = zeroResult.failed > 0 && zeroResult.success === false && zeroCleanedUp && zeroDbUntouched;
+
+    const allGuardsPassed = subtest1Passed && subtest2Passed && subtest3Passed;
+
+    if (allGuardsPassed) {
       recordTest({
-        name: "Reverse Migration (Restore) Byte-Size Mismatch Guard",
+        name: "Reverse Migration (Restore) S3 ContentLength Validation & Byte-Size Mismatch Guard",
         category: "UNIT",
         status: "PASS",
-        expected: "Detects byte-size discrepancy between S3 expected size and downloaded file; cleans up corrupt file; leaves DB fileUrl unchanged; reports failure",
-        actual: `failed=${restoreResult.failed}, success=${restoreResult.success}, corruptFileCleanedUp=${fileCleanedUp}, dbFileUrlPreserved=${dbNotUpdated}`,
+        expected: "Rejects byte-size mismatch, missing ContentLength, and zero ContentLength; cleans up corrupt files; preserves DB fileUrl",
+        actual: `mismatch(failed=${mismatchResult.failed}, cleaned=${mismatchCleanedUp}, dbPreserved=${mismatchDbUntouched}); missing(failed=${missingResult.failed}, cleaned=${missingCleanedUp}, dbPreserved=${missingDbUntouched}); zero(failed=${zeroResult.failed}, cleaned=${zeroCleanedUp}, dbPreserved=${zeroDbUntouched})`,
       });
     } else {
       recordTest({
-        name: "Reverse Migration (Restore) Byte-Size Mismatch Guard",
+        name: "Reverse Migration (Restore) S3 ContentLength Validation & Byte-Size Mismatch Guard",
         category: "UNIT",
         status: "FAIL",
-        expected: "failed > 0, success === false, corrupt file removed, db not updated",
-        actual: `failed=${restoreResult.failed}, success=${restoreResult.success}, corruptFileCleanedUp=${fileCleanedUp}, dbFileUrlPreserved=${dbNotUpdated}`,
+        expected: "All 3 ContentLength failure modes rejected, corrupt files deleted, db preserved",
+        actual: `subtest1=${subtest1Passed}, subtest2=${subtest2Passed}, subtest3=${subtest3Passed}`,
       });
     }
   } catch (err: any) {
     recordTest({
-      name: "Reverse Migration (Restore) Byte-Size Mismatch Guard",
+      name: "Reverse Migration (Restore) S3 ContentLength Validation & Byte-Size Mismatch Guard",
       category: "UNIT",
       status: "FAIL",
       expected: "Executes without uncaught exception",
@@ -428,6 +482,7 @@ export async function runPhase14Tests() {
     }
 
     // Guard 1: Non-interactive execution without confirmation must safely abort without modifying DB or files
+    // Strictly isolated to tempMaterialId7
     const unconfirmedResult = await restoreMaterialsFromS3({
       interactive: false,
       customUploadsDir: testTempDir7,
@@ -443,11 +498,13 @@ export async function runPhase14Tests() {
           contentType: "application/pdf",
         }),
       },
+      materialIds: [tempMaterialId7],
       // yes and force intentionally omitted
     });
 
     const unconfirmedFailed = unconfirmedResult.success === false;
     const reasonMatches = unconfirmedResult.reason === "CONFIRMATION_REQUIRED";
+    const totalIsOne = unconfirmedResult.total === 1;
     const noFilesWritten = !fs.existsSync(testTempDir7) || fs.readdirSync(testTempDir7).length === 0;
     const materialAfterUnconfirmed = await prisma.material.findUnique({
       where: { id: tempMaterialId7 },
@@ -457,10 +514,12 @@ export async function runPhase14Tests() {
     const guard1Passed =
       unconfirmedFailed &&
       reasonMatches &&
+      totalIsOne &&
       noFilesWritten &&
       fileUrlUnchanged;
 
     // Guard 2: With confirmation (--yes) and matching byte sizes, restore completes cleanly
+    // Strictly isolated to tempMaterialId7
     const expectedBytes = 100;
     const fullMockS3: any = {
       providerName: "s3",
@@ -479,6 +538,7 @@ export async function runPhase14Tests() {
       yes: true,
       customUploadsDir: testTempDir7,
       customS3Provider: fullMockS3,
+      materialIds: [tempMaterialId7],
     });
 
     const expectedRestoredFile = path.join(testTempDir7, `${tempMaterialId7}-verified.pdf`);
@@ -494,7 +554,8 @@ export async function runPhase14Tests() {
     const restoreSuccess =
       confirmedResult.success === true &&
       confirmedResult.failed === 0 &&
-      confirmedResult.restored >= 1;
+      confirmedResult.total === 1 &&
+      confirmedResult.restored === 1;
 
     const rollbackPolicyValid =
       guard1Passed &&
@@ -508,8 +569,8 @@ export async function runPhase14Tests() {
         name: "Rollback Safety Policy: Incomplete Restores Enforce S3 Remaining Active",
         category: "UNIT",
         status: "PASS",
-        expected: "Unconfirmed run aborts safely with CONFIRMATION_REQUIRED, writes no files, changes no DB fileUrl; confirmed restore with matching bytes succeeds, writes verified file, and updates DB",
-        actual: `guard1Passed=${guard1Passed} (reason=${unconfirmedResult.reason}, noFiles=${noFilesWritten}, urlUnchanged=${fileUrlUnchanged}); confirmedSuccess=${restoreSuccess}, bytesMatch=${bytesMatch} (${downloadedBytes}/${expectedBytes}), dbUpdated=${dbUpdatedProperly}`,
+        expected: "Unconfirmed run aborts safely with CONFIRMATION_REQUIRED, writes no files, changes no DB fileUrl; confirmed restore with matching bytes succeeds, writes verified file, and updates DB (isolated to test material)",
+        actual: `guard1Passed=${guard1Passed} (reason=${unconfirmedResult.reason}, total=${unconfirmedResult.total}, noFiles=${noFilesWritten}, urlUnchanged=${fileUrlUnchanged}); confirmedSuccess=${restoreSuccess} (total=${confirmedResult.total}, restored=${confirmedResult.restored}), bytesMatch=${bytesMatch} (${downloadedBytes}/${expectedBytes}), dbUpdated=${dbUpdatedProperly}`,
       });
     } else {
       recordTest({
@@ -517,7 +578,7 @@ export async function runPhase14Tests() {
         category: "UNIT",
         status: "FAIL",
         expected: "Rollback safety invariants satisfied",
-        actual: `guard1Passed=${guard1Passed}, success=${confirmedResult.success}, failed=${confirmedResult.failed}, fileExists=${fileExistsOnDisk}, bytesMatch=${bytesMatch}, dbUpdated=${dbUpdatedProperly}`,
+        actual: `guard1Passed=${guard1Passed}, success=${confirmedResult.success}, total=${confirmedResult.total}, failed=${confirmedResult.failed}, fileExists=${fileExistsOnDisk}, bytesMatch=${bytesMatch}, dbUpdated=${dbUpdatedProperly}`,
       });
     }
   } catch (err: any) {
@@ -540,40 +601,139 @@ export async function runPhase14Tests() {
   }
 
   // ============================================================================
-  // TEST 8: Migration Source Safety: Missing Source Files Skipped Without Fallbacks
+  // TEST 8: Storage Security: Approved Roots Confinement & Traversal Defense
   // ============================================================================
+  const externalSandboxDir = path.resolve(process.cwd(), `test-external-sandbox-${Date.now()}`);
+  const canaryExternalFile = path.join(externalSandboxDir, "canary-external.txt");
+
+  const localProvider = new LocalStorageProvider();
+  const canaryUploadFile = path.join(localProvider.getUploadsDir(), `canary-upload-${Date.now()}.pdf`);
+  const canaryPublicFile = path.join(localProvider.getPublicDir(), `canary-public-${Date.now()}.pdf`);
+
   try {
-    const localProvider = new LocalStorageProvider();
+    // Setup canary files
+    if (!fs.existsSync(externalSandboxDir)) {
+      fs.mkdirSync(externalSandboxDir, { recursive: true });
+    }
+    fs.writeFileSync(canaryExternalFile, "EXTERNAL_CANARY_DO_NOT_DELETE", "utf8");
+
+    if (!fs.existsSync(localProvider.getUploadsDir())) {
+      fs.mkdirSync(localProvider.getUploadsDir(), { recursive: true });
+    }
+    fs.writeFileSync(canaryUploadFile, "%PDF-1.4 canary upload", "utf8");
+
+    if (!fs.existsSync(localProvider.getPublicDir())) {
+      fs.mkdirSync(localProvider.getPublicDir(), { recursive: true });
+    }
+    fs.writeFileSync(canaryPublicFile, "%PDF-1.4 canary public", "utf8");
+
+    // 1. Valid file inside uploads/materials => allowed
+    const uploadKey = `/uploads/materials/${path.basename(canaryUploadFile)}`;
+    const resolvedUpload = localProvider.resolveLocalPath(uploadKey);
+    const uploadAllowed =
+      resolvedUpload !== null &&
+      fs.existsSync(resolvedUpload) &&
+      isWithinRoot(resolvedUpload, localProvider.getUploadsDir());
+
+    // 2. Valid explicitly approved public file => allowed
+    const publicKey = `/public/${path.basename(canaryPublicFile)}`;
+    const resolvedPublic = localProvider.resolveLocalPath(publicKey);
+    const publicAllowed =
+      resolvedPublic !== null &&
+      fs.existsSync(resolvedPublic) &&
+      isWithinRoot(resolvedPublic, localProvider.getPublicDir());
+
+    // 3. ../ traversal => rejected
+    const traversalKey1 = `../${path.basename(canaryExternalFile)}`;
+    const traversalKey2 = `/uploads/materials/../../${path.basename(canaryExternalFile)}`;
+    const traversalKey3 = `..\\..\\${path.basename(canaryExternalFile)}`;
+    const resolvedTraversal1 = localProvider.resolveLocalPath(traversalKey1);
+    const resolvedTraversal2 = localProvider.resolveLocalPath(traversalKey2);
+    const resolvedTraversal3 = localProvider.resolveLocalPath(traversalKey3);
+    const traversalRejected =
+      resolvedTraversal1 === null &&
+      resolvedTraversal2 === null &&
+      resolvedTraversal3 === null;
+
+    // 4. Absolute path outside root => rejected
+    const resolvedAbsoluteOutside = localProvider.resolveLocalPath(canaryExternalFile);
+    const absoluteOutsideRejected = resolvedAbsoluteOutside === null;
+
+    // 5. Sibling directory outside root => rejected
+    const siblingKey = `../${path.basename(externalSandboxDir)}/canary-external.txt`;
+    const resolvedSibling = localProvider.resolveLocalPath(siblingKey);
+    const siblingRejected = resolvedSibling === null;
+
+    // 6. S3 key => rejected by local provider
+    const s3Key = "materials/courses/course-123/mat-456/lecture.pdf";
+    const resolvedS3 = localProvider.resolveLocalPath(s3Key);
+    const s3Rejected = resolvedS3 === null;
+
+    // 7. Missing source file non-synthesis (retaining invariant)
     const nonExistentKey = "/uploads/materials/completely-nonexistent-file-999.pdf";
+    const resolvedMissing = localProvider.resolveLocalPath(nonExistentKey);
+    const missingNonSynthesized = resolvedMissing === null || !fs.existsSync(resolvedMissing);
 
-    const resolved = localProvider.resolveLocalPath(nonExistentKey);
-    const exists = resolved !== null && fs.existsSync(resolved);
+    // 8. deleteFile() cannot unlink files outside approved storage roots
+    await localProvider.deleteFile(canaryExternalFile);
+    const externalFileIntact = fs.existsSync(canaryExternalFile);
 
-    if (!exists) {
+    const allSecurityChecksPass =
+      uploadAllowed &&
+      publicAllowed &&
+      traversalRejected &&
+      absoluteOutsideRejected &&
+      siblingRejected &&
+      s3Rejected &&
+      missingNonSynthesized &&
+      externalFileIntact;
+
+    if (allSecurityChecksPass) {
       recordTest({
-        name: "Migration Source Safety: Missing Source File Non-Synthesis",
+        name: "Storage Security: Approved Roots Confinement & Traversal Defense",
         category: "UNIT",
         status: "PASS",
-        expected: "Missing migration source file resolves to non-existent; migration skips without synthesizing dummy PDF",
-        actual: `resolveLocalPath returned: ${resolved}; existsOnDisk: ${exists}; verified no synthetic fallback generated`,
+        expected: "Permits uploads/materials and public files; rejects ../ traversal, absolute paths outside roots, sibling dirs, and S3 keys; prevents deleteFile from unlinking external files",
+        actual: `uploadAllowed=${uploadAllowed}, publicAllowed=${publicAllowed}, traversalRejected=${traversalRejected}, absoluteOutsideRejected=${absoluteOutsideRejected}, siblingRejected=${siblingRejected}, s3Rejected=${s3Rejected}, missingNonSynthesized=${missingNonSynthesized}, deleteFileProtected=${externalFileIntact}`,
       });
     } else {
       recordTest({
-        name: "Migration Source Safety: Missing Source File Non-Synthesis",
+        name: "Storage Security: Approved Roots Confinement & Traversal Defense",
         category: "UNIT",
         status: "FAIL",
-        expected: "Missing source is not synthesized",
-        actual: `File unexpectedly exists: ${resolved}`,
+        expected: "All containment and traversal security checks pass",
+        actual: `uploadAllowed=${uploadAllowed}, publicAllowed=${publicAllowed}, traversalRejected=${traversalRejected}, absoluteOutsideRejected=${absoluteOutsideRejected}, siblingRejected=${siblingRejected}, s3Rejected=${s3Rejected}, missingNonSynthesized=${missingNonSynthesized}, deleteFileProtected=${externalFileIntact}`,
       });
     }
   } catch (err: any) {
     recordTest({
-      name: "Migration Source Safety: Missing Source File Non-Synthesis",
+      name: "Storage Security: Approved Roots Confinement & Traversal Defense",
       category: "UNIT",
       status: "FAIL",
       expected: "Executes without error",
       actual: err?.message || String(err),
     });
+  } finally {
+    if (fs.existsSync(canaryUploadFile)) {
+      try {
+        fs.unlinkSync(canaryUploadFile);
+      } catch {}
+    }
+    if (fs.existsSync(canaryPublicFile)) {
+      try {
+        fs.unlinkSync(canaryPublicFile);
+      } catch {}
+    }
+    if (fs.existsSync(canaryExternalFile)) {
+      try {
+        fs.unlinkSync(canaryExternalFile);
+      } catch {}
+    }
+    if (fs.existsSync(externalSandboxDir)) {
+      try {
+        fs.rmSync(externalSandboxDir, { recursive: true, force: true });
+      } catch {}
+    }
   }
 
   // ============================================================================

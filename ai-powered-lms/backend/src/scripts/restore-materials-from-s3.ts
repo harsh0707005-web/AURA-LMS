@@ -13,6 +13,7 @@ export interface RestoreOptions {
   customUploadsDir?: string;
   customS3Provider?: any;
   interactive?: boolean;
+  materialIds?: string[];
 }
 
 export interface RestoreResult {
@@ -58,8 +59,26 @@ export async function restoreMaterialsFromS3(
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // 2. Query all materials stored in S3
+  // 2. Query materials to restore from S3 (support optional materialIds filter)
+  let targetMaterialIds = options?.materialIds;
+  if (!targetMaterialIds) {
+    const idsArg = process.argv.find((arg) => arg.startsWith("--material-ids="));
+    if (idsArg) {
+      targetMaterialIds = idsArg
+        .split("=")[1]
+        ?.split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+
+  const whereClause: any = {};
+  if (targetMaterialIds && targetMaterialIds.length > 0) {
+    whereClause.id = { in: targetMaterialIds };
+  }
+
   const allMaterials = await prisma.material.findMany({
+    where: whereClause,
     orderBy: { createdAt: "asc" },
   });
 
@@ -189,18 +208,25 @@ export async function restoreMaterialsFromS3(
       const downloadedSize = localStats.size;
 
       if (downloadedSize === 0) {
-        fs.unlinkSync(targetLocalPath);
+        if (fs.existsSync(targetLocalPath)) {
+          fs.unlinkSync(targetLocalPath);
+        }
         throw new Error(
           `Downloaded file is 0 bytes (empty) at: ${targetLocalPath}`
         );
       }
 
-      if (
-        expectedSize !== undefined &&
-        expectedSize > 0 &&
-        downloadedSize !== expectedSize
-      ) {
-        fs.unlinkSync(targetLocalPath);
+      if (!Number.isSafeInteger(expectedSize) || (expectedSize as number) <= 0) {
+        if (fs.existsSync(targetLocalPath)) {
+          fs.unlinkSync(targetLocalPath);
+        }
+        throw new Error(`S3 ContentLength is missing or invalid for ${s3Key}`);
+      }
+
+      if (downloadedSize !== expectedSize) {
+        if (fs.existsSync(targetLocalPath)) {
+          fs.unlinkSync(targetLocalPath);
+        }
         throw new Error(
           `Byte-size mismatch for ${s3Key}: expected ${expectedSize} bytes from S3, but received ${downloadedSize} bytes`
         );

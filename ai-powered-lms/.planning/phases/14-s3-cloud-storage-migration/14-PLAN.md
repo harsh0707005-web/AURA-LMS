@@ -156,10 +156,10 @@ When `S3_ENABLED=false` (e.g. during an emergency rollback), `storage.service.ts
 If a full rollback from S3 to local filesystem is required:
 1. Run `npm run restore:s3` (`backend/src/scripts/restore-materials-from-s3.ts`).
 2. The script:
-   - Queries all `Material` records with `fileUrl` matching `materials/courses/*`.
+   - Queries `Material` records with `fileUrl` matching `materials/courses/*` (supports optional `--material-ids` filter for targeted/test rollbacks).
    - Downloads each object from AWS S3 via `GetObjectCommand`.
-   - Obtains expected S3 `ContentLength` and performs byte-size comparison against the downloaded file.
-   - Rejects empty files or size mismatches; cleans up corrupt files without modifying database paths.
+   - Obtains expected S3 `ContentLength`, strictly rejects missing/non-positive/invalid sizes, and performs exact byte-size verification against the downloaded file.
+   - Rejects empty files, missing/invalid ContentLength, or size mismatches; cleans up corrupt files without modifying database paths.
    - Saves verified file to `backend/uploads/materials/{material.id}-{filename}.pdf`.
    - Updates `Material.fileUrl` in PostgreSQL to `/uploads/materials/{material.id}-{filename}.pdf` **only after byte-size verification succeeds**.
    - Assesses rollback status: if `failedCount > 0`, declares rollback INCOMPLETE/UNSAFE and warns that `S3_ENABLED` must remain `true`. Only when 100% of materials are restored does it recommend setting `S3_ENABLED=false`.

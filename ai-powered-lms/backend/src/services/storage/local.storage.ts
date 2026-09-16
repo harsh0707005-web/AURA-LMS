@@ -3,46 +3,142 @@ import path from "path";
 import { Readable } from "stream";
 import { IStorageProvider, StorageFileStream, StorageUploadOptions } from "./storage.interface.js";
 
+/**
+ * Checks whether a candidate path resolves within an approved root directory.
+ * Prevents directory traversal (../, absolute escapes, and drive/UNC boundary crossings).
+ */
+export function isWithinRoot(candidate: string, root: string): boolean {
+  const resolvedCandidate = path.resolve(candidate);
+  const resolvedRoot = path.resolve(root);
+  const relative = path.relative(resolvedRoot, resolvedCandidate);
+
+  return (
+    relative === "" ||
+    (!relative.startsWith("..") && !path.isAbsolute(relative))
+  );
+}
+
 export class LocalStorageProvider implements IStorageProvider {
   readonly providerName = "local";
   readonly isCloud = false;
   private readonly uploadsDir: string;
+  private readonly publicDir: string;
 
-  constructor(customDir?: string) {
-    this.uploadsDir = customDir || path.resolve(process.cwd(), "uploads", "materials");
+  constructor(customDir?: string, customPublicDir?: string) {
+    this.uploadsDir = path.resolve(customDir || path.resolve(process.cwd(), "uploads", "materials"));
+    this.publicDir = path.resolve(customPublicDir || path.resolve(process.cwd(), "public"));
     if (!fs.existsSync(this.uploadsDir)) {
       fs.mkdirSync(this.uploadsDir, { recursive: true });
     }
+    if (!fs.existsSync(this.publicDir)) {
+      fs.mkdirSync(this.publicDir, { recursive: true });
+    }
+  }
+
+  public getUploadsDir(): string {
+    return this.uploadsDir;
+  }
+
+  public getPublicDir(): string {
+    return this.publicDir;
   }
 
   /**
    * Resolves a storage key or relative path to a local filesystem path.
-   * Returns null if path is an S3 cloud key or does not resolve safely.
+   * Confines resolution strictly to approved storage roots (uploads/materials and public).
+   * Returns null if path is an S3 cloud key, contains traversal attempts, or resolves outside approved roots.
    */
   public resolveLocalPath(key: string): string | null {
-    if (!key) return null;
+    if (!key || typeof key !== "string") return null;
 
-    // S3 cloud keys should not be resolved locally
+    // S3 cloud keys must never be resolved locally
     if (key.startsWith("materials/courses/")) {
       return null;
     }
 
-    const filename = path.basename(key);
-    const primaryCandidate = path.join(this.uploadsDir, filename);
-    if (fs.existsSync(primaryCandidate)) {
-      return primaryCandidate;
+    // Reject null bytes
+    if (key.includes("\0")) {
+      return null;
     }
 
-    // Check direct relative path from workspace root
-    const rootCandidate = path.resolve(process.cwd(), key.replace(/^\//, ""));
-    if (fs.existsSync(rootCandidate) && fs.statSync(rootCandidate).isFile()) {
-      return rootCandidate;
+    const approvedRoots = [this.uploadsDir, this.publicDir];
+    const hasTraversal = key.includes("..");
+    const candidatePairs: Array<{ candidate: string; root: string }> = [];
+
+    // 1. Candidate within uploadsDir (stripping optional /uploads/materials prefix)
+    const uploadsPrefixRegex = /^\/?uploads\/materials\/?/;
+    if (uploadsPrefixRegex.test(key)) {
+      const rel = key.replace(uploadsPrefixRegex, "");
+      candidatePairs.push({
+        candidate: path.resolve(this.uploadsDir, rel),
+        root: this.uploadsDir,
+      });
     }
 
-    // Check public directory fallback
-    const publicCandidate = path.resolve(process.cwd(), "public", key.replace(/^\//, ""));
-    if (fs.existsSync(publicCandidate) && fs.statSync(publicCandidate).isFile()) {
-      return publicCandidate;
+    // 2. Candidate within publicDir (stripping optional /public prefix)
+    const publicPrefixRegex = /^\/?public\/?/;
+    if (publicPrefixRegex.test(key)) {
+      const rel = key.replace(publicPrefixRegex, "");
+      candidatePairs.push({
+        candidate: path.resolve(this.publicDir, rel),
+        root: this.publicDir,
+      });
+    }
+
+    // 3. Absolute filesystem paths (e.g. C:\... or explicit paths)
+    if (path.isAbsolute(key)) {
+      const resolved = path.resolve(key);
+      for (const root of approvedRoots) {
+        if (isWithinRoot(resolved, root)) {
+          candidatePairs.push({
+            candidate: resolved,
+            root,
+          });
+        }
+      }
+    }
+
+    // 4. Direct relative path within uploadsDir
+    candidatePairs.push({
+      candidate: path.resolve(this.uploadsDir, key.replace(/^\//, "")),
+      root: this.uploadsDir,
+    });
+
+    // 5. Direct relative path within publicDir
+    candidatePairs.push({
+      candidate: path.resolve(this.publicDir, key.replace(/^\//, "")),
+      root: this.publicDir,
+    });
+
+    // 6. Basename candidate within uploadsDir ONLY IF no traversal was attempted
+    if (!hasTraversal) {
+      const base = path.basename(key);
+      candidatePairs.push({
+        candidate: path.resolve(this.uploadsDir, base),
+        root: this.uploadsDir,
+      });
+    }
+
+    // Validate candidates in order against containment and existence
+    for (const { candidate, root } of candidatePairs) {
+      if (!isWithinRoot(candidate, root)) {
+        continue;
+      }
+
+      if (fs.existsSync(candidate)) {
+        try {
+          const stat = fs.statSync(candidate);
+          if (!stat.isFile()) continue;
+
+          // Symlink traversal check
+          const real = fs.realpathSync(candidate);
+          if (isWithinRoot(real, root)) {
+            return candidate;
+          }
+        } catch {
+          continue;
+        }
+      }
     }
 
     return null;
@@ -91,14 +187,23 @@ export class LocalStorageProvider implements IStorageProvider {
   }
 
   public async deleteFile(key: string): Promise<void> {
-    if (key.startsWith("materials/courses/")) {
+    if (!key || key.startsWith("materials/courses/")) {
       return;
     }
 
     const localPath = this.resolveLocalPath(key);
-    if (localPath && fs.existsSync(localPath)) {
+    if (localPath) {
+      // Defense-in-depth: re-verify containment before unlinking
+      const approvedRoots = [this.uploadsDir, this.publicDir];
+      const isSafe = approvedRoots.some((root) => isWithinRoot(localPath, root));
+      if (!isSafe) {
+        return;
+      }
+
       try {
-        await fs.promises.unlink(localPath);
+        if (fs.existsSync(localPath)) {
+          await fs.promises.unlink(localPath);
+        }
       } catch (err) {
         // Idempotent: ignore deletion errors if file is already missing
         if ((err as NodeJS.ErrnoException).code !== "ENOENT") {

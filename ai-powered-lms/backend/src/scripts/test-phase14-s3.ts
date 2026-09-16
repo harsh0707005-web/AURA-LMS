@@ -477,8 +477,9 @@ export async function runPhase14Tests() {
       },
     });
 
-    if (!fs.existsSync(testTempDir7)) {
-      fs.mkdirSync(testTempDir7, { recursive: true });
+    // Ensure testTempDir7 does not exist initially to verify lazy directory creation
+    if (fs.existsSync(testTempDir7)) {
+      fs.rmSync(testTempDir7, { recursive: true, force: true });
     }
 
     const expectedBytes = 100;
@@ -495,7 +496,7 @@ export async function runPhase14Tests() {
       }),
     };
 
-    // Guard 0: Explicit empty filter (materialIds: []) must be refused without modifying DB or files
+    // Guard 0: Explicit empty filter (materialIds: []) must be refused without modifying DB or creating directories
     const emptyFilterResult = await restoreMaterialsFromS3({
       yes: true,
       customUploadsDir: testTempDir7,
@@ -507,9 +508,10 @@ export async function runPhase14Tests() {
       emptyFilterResult.success === false &&
       emptyFilterResult.reason === "EMPTY_MATERIAL_ID_FILTER" &&
       emptyFilterResult.total === 0 &&
-      emptyFilterResult.restored === 0;
+      emptyFilterResult.restored === 0 &&
+      !fs.existsSync(testTempDir7);
 
-    // Guard 1: Non-interactive execution without confirmation must safely abort without modifying DB or files
+    // Guard 1: Non-interactive execution without confirmation must safely abort without modifying DB or creating directories
     // Strictly isolated to tempMaterialId7
     const unconfirmedResult = await restoreMaterialsFromS3({
       interactive: false,
@@ -522,7 +524,7 @@ export async function runPhase14Tests() {
     const unconfirmedFailed = unconfirmedResult.success === false;
     const reasonMatches = unconfirmedResult.reason === "CONFIRMATION_REQUIRED";
     const totalIsOne = unconfirmedResult.total === 1;
-    const noFilesWritten = !fs.existsSync(testTempDir7) || fs.readdirSync(testTempDir7).length === 0;
+    const noFilesWritten = !fs.existsSync(testTempDir7);
     const materialAfterUnconfirmed = await prisma.material.findUnique({
       where: { id: tempMaterialId7 },
     });
@@ -566,23 +568,14 @@ export async function runPhase14Tests() {
       confirmedResult.guidance?.includes("Do NOT set S3_ENABLED=false until an unfiltered restore reports SUCCESS.") === true &&
       confirmedResult.guidance?.includes("You may now safely set S3_ENABLED=false") === false;
 
-    // Guard 3: Verify unfiltered success guidance retains S3_ENABLED=false recommendation
-    const unfilteredGuidanceContract =
-      getRestoreGuidance(false) ===
-      "NEXT STEP: You may now safely set S3_ENABLED=false in your environment and restart the server.";
-
-    const unfilteredResult = await restoreMaterialsFromS3({
-      yes: true,
-      customUploadsDir: testTempDir7,
-      customS3Provider: fullMockS3,
-      materialIds: undefined,
-    });
-
+    // Guard 3: Verify unfiltered success guidance retains S3_ENABLED=false recommendation directly without executing an unfiltered DB restore
+    const unfilteredGuidance = getRestoreGuidance(false);
     const unfilteredGuidanceValid =
-      unfilteredGuidanceContract &&
-      unfilteredResult.success === true &&
-      unfilteredResult.guidance === getRestoreGuidance(false) &&
-      unfilteredResult.guidance?.includes("You may now safely set S3_ENABLED=false in your environment and restart the server.") === true;
+      unfilteredGuidance ===
+        "NEXT STEP: You may now safely set S3_ENABLED=false in your environment and restart the server." &&
+      unfilteredGuidance.includes(
+        "You may now safely set S3_ENABLED=false in your environment and restart the server."
+      );
 
     const rollbackPolicyValid =
       emptyRejected &&

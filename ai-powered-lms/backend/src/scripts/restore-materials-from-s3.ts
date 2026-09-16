@@ -62,9 +62,6 @@ export async function restoreMaterialsFromS3(
   const uploadsDir =
     options?.customUploadsDir ||
     path.resolve(process.cwd(), "uploads", "materials");
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
 
   // 2. Query materials to restore from S3 (support optional materialIds filter)
   let targetMaterialIds = options?.materialIds;
@@ -194,6 +191,10 @@ export async function restoreMaterialsFromS3(
   }
 
   // 5. Execute Reverse Migration
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
   let restoredCount = 0;
   let failedCount = 0;
 

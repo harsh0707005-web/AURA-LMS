@@ -3,6 +3,7 @@ import path from "path";
 import prisma from "../lib/prisma.js";
 import { CreateMaterialInput } from "../types/academic.types.js";
 import { ingestMaterialPdf } from "./ingestion.service.js";
+import { storageService } from "./storage/storage.service.js";
 
 const uploadsDir = path.resolve(process.cwd(), "uploads", "materials");
 
@@ -76,8 +77,9 @@ export async function getMaterialById(materialId: string, studentId?: string) {
 }
 
 /**
- * Resolves the authorized PDF file for streaming.
- * Checks student course enrollment and returns the local file path.
+ * Resolves the authorized PDF file stream.
+ * Enforces pre-storage authorization checks (student course enrollment verification)
+ * before retrieving from cloud S3 or local storage.
  */
 export async function getMaterialFile(materialId: string, userId: string, role: string) {
   const material = await prisma.material.findUnique({
@@ -85,10 +87,6 @@ export async function getMaterialFile(materialId: string, userId: string, role: 
     include: {
       course: {
         select: { id: true, code: true, title: true, facultyId: true },
-      },
-      chunks: {
-        select: { content: true, pageNumber: true },
-        orderBy: { chunkIndex: "asc" },
       },
     },
   });
@@ -116,44 +114,16 @@ export async function getMaterialFile(materialId: string, userId: string, role: 
     }
   }
 
-  // Resolve file on disk
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+  if (!material.fileUrl) {
+    throw Object.assign(new Error("Material has no associated file"), { statusCode: 404 });
   }
 
-  let resolvedPath: string | null = null;
-
-  if (material.fileUrl) {
-    const filename = path.basename(material.fileUrl);
-    const candidatePath = path.join(uploadsDir, filename);
-    if (fs.existsSync(candidatePath)) {
-      resolvedPath = candidatePath;
-    } else {
-      const rootCandidate = path.resolve(process.cwd(), material.fileUrl.replace(/^\//, ""));
-      if (fs.existsSync(rootCandidate)) {
-        resolvedPath = rootCandidate;
-      }
-    }
-  }
-
-  // Fallback: If physical file doesn't exist on disk, find any existing sample PDF or create a valid PDF file
-  if (!resolvedPath || !fs.existsSync(resolvedPath)) {
-    const fallbackPath = path.join(uploadsDir, `material-${material.id}.pdf`);
-    if (!fs.existsSync(fallbackPath)) {
-      // Look for an existing lecture PDF in uploads
-      const files = fs.readdirSync(uploadsDir).filter((f) => f.endsWith(".pdf") && !f.startsWith("material-"));
-      if (files.length > 0) {
-        fs.copyFileSync(path.join(uploadsDir, files[0]), fallbackPath);
-      } else {
-        const generatedPdf = createFallbackPdf(material.title, material.unit);
-        fs.writeFileSync(fallbackPath, generatedPdf);
-      }
-    }
-    resolvedPath = fallbackPath;
-  }
+  const fileStream = await storageService.getFileStream(material.fileUrl);
 
   return {
-    filePath: resolvedPath,
+    stream: fileStream.stream,
+    contentLength: fileStream.contentLength,
+    contentType: fileStream.contentType || "application/pdf",
     title: material.title,
     unit: material.unit,
     fileType: material.fileType || "pdf",
@@ -406,7 +376,8 @@ export async function createMaterial(
   input: CreateMaterialInput,
   facultyId: string,
   role: string,
-  localFilePath?: string
+  fileBufferOrPath?: Buffer | string,
+  originalFilename?: string
 ) {
   const course = await prisma.course.findUnique({ where: { id: courseId } });
   if (!course) {
@@ -425,37 +396,107 @@ export async function createMaterial(
     throw Object.assign(new Error("Material title and unit are required"), { statusCode: 400 });
   }
 
-  // 1. Create initial Material record with PROCESSING status
-  const material = await prisma.material.create({
+  // If a file buffer or path is provided, execute multi-stage upload + ingestion with compensation
+  if (fileBufferOrPath) {
+    const buffer = Buffer.isBuffer(fileBufferOrPath)
+      ? fileBufferOrPath
+      : fs.readFileSync(fileBufferOrPath);
+
+    const filename =
+      originalFilename ||
+      (typeof fileBufferOrPath === "string"
+        ? path.basename(fileBufferOrPath)
+        : `${title.replace(/[^a-zA-Z0-9.-]/g, "_")}.pdf`);
+
+    const computedSize = `${(buffer.length / (1024 * 1024)).toFixed(1)} MB`;
+
+    // Step 2: Generate Material record in PostgreSQL with status="PROCESSING"
+    const material = await prisma.material.create({
+      data: {
+        courseId,
+        title: title.trim(),
+        unit: unit.trim(),
+        fileType: fileType || "pdf",
+        fileSize: fileSize || computedSize,
+        fileUrl: null,
+        processingStatus: "PROCESSING",
+        ragChunksCount: 0,
+      },
+    });
+
+    // Step 3: Upload buffer to active storage provider (AWS S3 or Local)
+    let storageKey: string;
+    try {
+      storageKey = await storageService.uploadMaterial(
+        courseId,
+        material.id,
+        filename,
+        buffer,
+        { contentType: "application/pdf" }
+      );
+    } catch (uploadError: any) {
+      // Scenario 1: Storage Upload Fails -> abort, delete DB record, return HTTP 503
+      await prisma.material.delete({ where: { id: material.id } }).catch(() => {});
+      throw Object.assign(
+        new Error("Cloud storage service unavailable. Upload aborted."),
+        { statusCode: 503, cause: uploadError }
+      );
+    }
+
+    // Step 4 & 5: Ingestion Pipeline (text extraction, chunking, Gemini 3072-dim embeddings, DB DocumentChunks)
+    let totalChunks = 0;
+    try {
+      const ingestionResult = await ingestMaterialPdf(material.id, buffer);
+      totalChunks = ingestionResult.totalChunks;
+    } catch (ingestionError: any) {
+      // Scenario 2: Ingestion Fails -> compensatory cleanup of uploaded storage object, mark Material FAILED
+      await storageService.deleteFile(storageKey).catch((delErr) => {
+        console.error(`[STORAGE COMPENSATION ERROR] Failed to delete orphaned object ${storageKey}:`, delErr);
+      });
+
+      await prisma.material.update({
+        where: { id: material.id },
+        data: { processingStatus: "FAILED" },
+      }).catch(() => {});
+
+      const statusCode = ingestionError.statusCode || 422;
+      throw Object.assign(
+        new Error(`PDF processing failed. Cloud storage cleaned up: ${ingestionError?.message || "Ingestion failed"}`),
+        { statusCode, cause: ingestionError }
+      );
+    }
+
+    // Step 6: Update Material status to "READY" and set fileUrl = storageKey
+    try {
+      const readyMaterial = await prisma.material.update({
+        where: { id: material.id },
+        data: {
+          fileUrl: storageKey,
+          processingStatus: "READY",
+          ragChunksCount: totalChunks,
+        },
+      });
+      return readyMaterial;
+    } catch (dbError: any) {
+      // Scenario 3: Final DB update fails -> delete storage object
+      await storageService.deleteFile(storageKey).catch(() => {});
+      throw dbError;
+    }
+  }
+
+  // Metadata-only Material creation (no file uploaded)
+  return await prisma.material.create({
     data: {
       courseId,
       title: title.trim(),
       unit: unit.trim(),
       fileType: fileType || "pdf",
       fileSize: fileSize || "2.5 MB",
-      fileUrl: fileUrl || (localFilePath ? `/uploads/materials/${localFilePath.split(/[\\/]/).pop()}` : null),
-      processingStatus: localFilePath ? "PROCESSING" : "READY",
+      fileUrl: fileUrl || null,
+      processingStatus: "READY",
       ragChunksCount: 0,
     },
   });
-
-  // 2. If a local file was uploaded, trigger ingestion pipeline
-  if (localFilePath) {
-    try {
-      const { totalChunks } = await ingestMaterialPdf(material.id, localFilePath);
-      return await prisma.material.findUnique({
-        where: { id: material.id },
-      });
-    } catch (ingestionError) {
-      console.error(`[INGESTION ERROR] Failed to ingest material ${material.id}:`, ingestionError);
-      // Return the material marked with FAILED status
-      return await prisma.material.findUnique({
-        where: { id: material.id },
-      });
-    }
-  }
-
-  return material;
 }
 
 export async function updateMaterial(
@@ -507,6 +548,15 @@ export async function deleteMaterial(materialId: string, userId: string, role: s
       new Error("Forbidden: You can only delete materials for your own courses"),
       { statusCode: 403 }
     );
+  }
+
+  // Pre-authorization passed; delete file from storage idempotently
+  if (material.fileUrl) {
+    try {
+      await storageService.deleteFile(material.fileUrl);
+    } catch (storageError) {
+      console.warn(`[STORAGE DELETE WARN] Failed to delete file for material ${materialId}:`, storageError);
+    }
   }
 
   await prisma.material.delete({ where: { id: materialId } });

@@ -43,13 +43,22 @@ app.use(
 
 app.use(express.json());
 
+import { storageService } from "./services/storage/storage.service.js";
+
 // Health Check Endpoints
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", async (_req, res) => {
+  const storageHealth = await storageService.getHealth().catch((err) => ({
+    provider: storageService.getActiveProviderName(),
+    healthy: false,
+    details: { error: err?.message },
+  }));
+
   res.status(200).json({
     success: true,
     message: "AURA LMS backend service is operational",
     version: "1.0.0",
     academicProject: "AI-Powered LMS with LLMs and Learning Analytics",
+    storage: storageHealth,
   });
 });
 

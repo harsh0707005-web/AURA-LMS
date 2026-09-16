@@ -12,12 +12,16 @@
     "seed": "tsc && node dist/scripts/seed.js",
     "embeddings:backfill": "tsc && node dist/scripts/backfill-embeddings.js",
     "rag:test": "tsc && node dist/scripts/rag-test.js",
-    "test:rag": "tsc && node dist/scripts/test-phase2-rag.js"
+    "test:rag": "tsc && node dist/scripts/test-phase2-rag.js",
+    "migrate:s3": "tsc && node dist/scripts/migrate-materials-to-s3.js",
+    "restore:s3": "tsc && node dist/scripts/restore-materials-from-s3.js",
+    "test:s3": "tsc && node dist/scripts/test-phase14-s3.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1133.0",
     "@google/genai": "^2.18.0",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",

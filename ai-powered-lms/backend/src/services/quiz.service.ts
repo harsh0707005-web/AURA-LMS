@@ -106,6 +106,7 @@ export async function createQuiz(
       difficulty: difficulty || "Medium",
       timeLimitMinutes: timeLimitMinutes || 20,
       totalQuestions: questions?.length || 0,
+      isAiGenerated: Boolean(input.isAiGenerated),
       published: true,
       questions: questions
         ? {

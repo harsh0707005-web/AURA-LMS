@@ -11,6 +11,8 @@ export interface LLMGenerationOptions {
   maxOutputTokens?: number;
   thinkingBudget?: number; // 0 for low latency (no thinking), >0 for reasoning models
   complexity?: "normal" | "complex";
+  responseMimeType?: string; // e.g., "application/json"
+  responseSchema?: any; // Structured schema for guaranteed JSON format
 }
 
 export interface LLMGenerationResult {

@@ -81,3 +81,35 @@ export async function sendMessage(req: AuthRequest, res: Response, next: NextFun
     next(error);
   }
 }
+
+import { generateQuizQuestions } from "../services/ai/quiz-generator.service.js";
+
+export async function generateQuiz(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+
+    const { courseId, topic } = req.body || {};
+    if (!courseId || typeof courseId !== "string" || !courseId.trim()) {
+      res.status(400).json({ success: false, message: "courseId is required" });
+      return;
+    }
+
+    if (!topic || typeof topic !== "string" || !topic.trim()) {
+      res.status(400).json({ success: false, message: "topic is required" });
+      return;
+    }
+
+    const result = await generateQuizQuestions(req.body, req.user.userId, req.user.role);
+    const statusCode = req.body?.saveImmediately ? 201 : 200;
+
+    res.status(statusCode).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

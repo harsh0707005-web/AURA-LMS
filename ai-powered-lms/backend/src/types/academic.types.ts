@@ -81,6 +81,47 @@ export interface CreateQuizInput {
   difficulty?: Difficulty;
   timeLimitMinutes?: number;
   questions?: CreateQuizQuestionInput[];
+  isAiGenerated?: boolean;
+}
+
+export interface GenerateQuizInput {
+  courseId: string;
+  topic: string;
+  difficulty?: Difficulty;
+  questionCount?: number;
+  materialIds?: string[];
+  saveImmediately?: boolean;
+  timeLimitMinutes?: number;
+}
+
+export interface GeneratedQuestion {
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
+  explanation: string;
+  bloomsLevel: BloomsLevel;
+  difficulty: Difficulty;
+  topic: string;
+  sourceCitation: string;
+}
+
+export interface GenerateQuizResponseData {
+  quizTitle: string;
+  topic: string;
+  difficulty: Difficulty;
+  courseId: string;
+  isGrounded: boolean;
+  groundingNote: string;
+  sources: Array<{
+    documentName: string;
+    materialId: string;
+    unit: string;
+    page: number | null;
+    chunkId: string;
+    similarity: number;
+  }>;
+  questions: GeneratedQuestion[];
+  quiz?: any | null;
 }
 
 export interface SubmitQuizAttemptInput {

@@ -6,7 +6,7 @@ This document outlines the phased milestone structure of **AURA LMS**, tracking 
 
 ## Milestone 1: Core Institutional Platform & Vector RAG (`v1.0`)
 **Status:** `COMPLETED` (100% Operational & Formally Verified)  
-**Verification Report:** [`AURA_LMS_AUDIT.md`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/AURA_LMS_AUDIT.md)
+**Verification Report:** [`AURA_LMS_AUDIT.md`](../AURA_LMS_AUDIT.md)
 
 | Phase | Subsystem & Deliverable | Status | Verification Summary |
 | :--- | :--- | :--- | :--- |
@@ -32,7 +32,7 @@ This document outlines the phased milestone structure of **AURA LMS**, tracking 
 | Phase | Focus Area | Status | Key Objectives & Verification |
 | :--- | :--- | :--- | :--- |
 | **Phase 14** | **S3 Cloud Storage Migration** | **COMPLETED** | S3 private proxy streaming, `IStorageProvider` abstraction, idempotent forward/reverse migration, 9/9 test suites pass. |
-| **Phase 15** | **Server-Side LLM Quiz API** | **COMPLETED** | Dedicated `POST /api/ai/generate-quiz` using Gemini 3.7 Flash structured JSON, pgvector grounding, mandatory server-side validation layer, two-stage preview/publish modal, 19/19 test suites pass. |
+| **Phase 15** | **Server-Side LLM Quiz API** | **COMPLETED** | Dedicated `POST /api/ai/generate-quiz` using Gemini 3.7 Flash structured JSON, pgvector grounding, mandatory server-side validation layer, two-stage preview/publish modal, 36/36 test suites pass. |
 | **Phase 16** | **Security & Auth Hardening** | `PLANNED` | Implement `express-rate-limit` across auth/AI routes and transition to dual-token authentication (short-lived access tokens + HttpOnly refresh cookies). |
 | **Phase 17** | **Database & Index Optimization** | `PLANNED` | Create PostgreSQL HNSW index on `DocumentChunk.embedding` for scalable sub-10ms queries; deprecate legacy `Document` model in Prisma schema. |
 | **Phase 18** | **Automated CI/CD Test Pipeline** | `PLANNED` | Wrap existing standalone test scripts into a unified Vitest test runner with automated GitHub Actions CI execution. |

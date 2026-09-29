@@ -21,20 +21,23 @@ The frontend `QuizGeneratorModal.tsx` is upgraded from hardcoded synthetic mock 
 ### Files to Create [NEW]
 | File | Layer | Purpose |
 | :--- | :--- | :--- |
-| [`backend/src/services/ai/quiz-generator.service.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/services/ai/quiz-generator.service.ts) | Backend Service | Implements vector retrieval, Gemini structured JSON generation, mandatory post-generation validation layer, and database persistence with `isAiGenerated: true`. |
-| [`backend/src/scripts/test-phase15-quiz-generation.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/scripts/test-phase15-quiz-generation.ts) | Test Suite | Standalone integration test suite verifying authorization, validation rejects, pgvector grounding, ungrounded fallback, lifecycle persistence guards, and student attempt safety. |
+| [`backend/src/services/ai/quiz-generator.service.ts`](../../../backend/src/services/ai/quiz-generator.service.ts) | Backend Service | Implements vector retrieval, Gemini structured JSON generation, mandatory post-generation validation layer, prompt boundaries, and database persistence with `isAiGenerated: true`. |
+| [`backend/src/scripts/test-phase15-quiz-generation.ts`](../../../backend/src/scripts/test-phase15-quiz-generation.ts) | Test Suite | Standalone integration test suite verifying authorization, validation rejects, pgvector grounding, ungrounded fallback, lifecycle persistence guards, idempotency, and student attempt safety. |
+| [`backend/src/lib/idempotency.ts`](../../../backend/src/lib/idempotency.ts) | Utility | Server-side in-memory publication idempotency manager preventing duplicate quiz creation during retries and concurrent requests. |
 
 ### Files to Modify [MODIFY]
 | File | Layer | Changes |
 | :--- | :--- | :--- |
-| [`backend/src/services/ai/providers/llm-provider.interface.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/services/ai/providers/llm-provider.interface.ts) | Backend Interface | Add `responseMimeType?: string` and `responseSchema?: any` to `LLMGenerationOptions`. |
-| [`backend/src/services/ai/gemini.provider.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/services/ai/gemini.provider.ts) | Backend Provider | Support `responseMimeType` and `responseSchema` in `genConfig` passed to `@google/genai`; utilize provider's supported thinking configuration (preferring low thinking level where supported). |
-| [`backend/src/types/academic.types.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/types/academic.types.ts) | Backend Types | Define `GenerateQuizInput`, `GeneratedQuestion`, `GenerateQuizResponse`, and update `CreateQuizInput` with `isAiGenerated?: boolean`. |
-| [`backend/src/services/quiz.service.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/services/quiz.service.ts) | Backend Service | Update `createQuiz()` to persist `isAiGenerated: Boolean(input.isAiGenerated)`. |
-| [`backend/src/controllers/ai.controller.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/controllers/ai.controller.ts) | Backend Controller | Add `generateQuiz()` controller handler with input validation, course ownership check, and error mapping. |
-| [`backend/src/routes/ai.routes.ts`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/src/routes/ai.routes.ts) | Backend Routes | Mount `POST /generate-quiz` guarded by `authorizeRoles("FACULTY", "ADMIN")`. |
-| [`backend/package.json`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/backend/package.json) | Package Scripts | Add `"test:quiz": "tsc && node dist/scripts/test-phase15-quiz-generation.js"`. |
-| [`frontend/components/quiz/QuizGeneratorModal.tsx`](file:///c:/Users/DELL/Desktop/FINAL%20YEAR/ai-powered-lms/frontend/components/quiz/QuizGeneratorModal.tsx) | Frontend Component | Implement preview/publish lifecycle with single-submit inflight guard, visible ungrounded warning, explicit confirmation checkbox for fallback publishing, and live citation badges. |
+| [`backend/src/services/ai/providers/llm-provider.interface.ts`](../../../backend/src/services/ai/providers/llm-provider.interface.ts) | Backend Interface | Add `responseMimeType?: string` and `responseSchema?: any` to `LLMGenerationOptions`. |
+| [`backend/src/services/ai/gemini.provider.ts`](../../../backend/src/services/ai/gemini.provider.ts) | Backend Provider | Support `responseMimeType` and `responseSchema` in `genConfig` passed to `@google/genai`; utilize provider's supported thinking configuration (preferring low thinking level where supported). |
+| [`backend/src/types/academic.types.ts`](../../../backend/src/types/academic.types.ts) | Backend Types | Define `GenerateQuizInput`, `GeneratedQuestion`, `GenerateQuizResponse`, and update `CreateQuizInput` with `isAiGenerated?: boolean`, `fallbackAcknowledged?: boolean`, and `idempotencyKey?: string`. |
+| [`backend/src/services/quiz.service.ts`](../../../backend/src/services/quiz.service.ts) | Backend Service | Update `createQuiz()` to enforce ungrounded fallback confirmation and apply server-side publication idempotency. |
+| [`backend/src/services/ai/rag.service.ts`](../../../backend/src/services/ai/rag.service.ts) | Backend Service | Add `materialIds` pre-filtering in vector retrieval query before Top-6 limit. |
+| [`backend/src/controllers/ai.controller.ts`](../../../backend/src/controllers/ai.controller.ts) | Backend Controller | Add `generateQuiz()` controller handler with comprehensive runtime body validation, course ownership check, and error mapping. |
+| [`backend/src/controllers/quiz.controller.ts`](../../../backend/src/controllers/quiz.controller.ts) | Backend Controller | Support `Idempotency-Key` header in `addQuiz` to ensure duplicate publish requests resolve idempotently. |
+| [`backend/src/routes/ai.routes.ts`](../../../backend/src/routes/ai.routes.ts) | Backend Routes | Mount `POST /generate-quiz` guarded by `authorizeRoles("FACULTY", "ADMIN")`. |
+| [`backend/package.json`](../../../backend/package.json) | Package Scripts | Add `"test:quiz": "tsc && node dist/scripts/test-phase15-quiz-generation.js"`. |
+| [`frontend/components/quiz/QuizGeneratorModal.tsx`](../../../frontend/components/quiz/QuizGeneratorModal.tsx) | Frontend Component | Implement preview/publish lifecycle with single-submit inflight guard, stale preview lock during regeneration, ungrounded fallback acknowledgment checkbox, and publication idempotency. |
 
 ---
 

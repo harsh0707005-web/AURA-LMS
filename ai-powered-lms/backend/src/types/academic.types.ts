@@ -73,6 +73,7 @@ export interface CreateQuizQuestionInput {
   difficulty?: Difficulty;
   bloomsLevel?: BloomsLevel;
   orderIndex?: number;
+  sourceCitation?: string;
 }
 
 export interface CreateQuizInput {
@@ -82,6 +83,8 @@ export interface CreateQuizInput {
   timeLimitMinutes?: number;
   questions?: CreateQuizQuestionInput[];
   isAiGenerated?: boolean;
+  fallbackAcknowledged?: boolean;
+  idempotencyKey?: string;
 }
 
 export interface GenerateQuizInput {
@@ -92,6 +95,8 @@ export interface GenerateQuizInput {
   materialIds?: string[];
   saveImmediately?: boolean;
   timeLimitMinutes?: number;
+  fallbackAcknowledged?: boolean;
+  idempotencyKey?: string;
 }
 
 export interface GeneratedQuestion {

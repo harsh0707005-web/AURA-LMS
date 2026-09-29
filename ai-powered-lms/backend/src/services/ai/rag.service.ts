@@ -49,14 +49,16 @@ export class RAGService {
   /**
    * Performs semantic vector search on PostgreSQL pgvector scoped strictly to a course,
    * tracking embedding and vector search latencies.
+   * If materialIds is provided, applies material filtering before Top-K ranking.
    */
   public async retrieveRelevantChunksWithTiming(
     query: string,
     courseId: string,
-    options?: { topK?: number; minSimilarity?: number }
+    options?: { topK?: number; minSimilarity?: number; materialIds?: string[] }
   ): Promise<RetrievalResult> {
     const topK = options?.topK || Number(process.env.RAG_TOP_K) || 5;
     const minSimilarity = options?.minSimilarity || Number(process.env.RAG_MIN_SIMILARITY) || 0.55;
+    const materialIds = options?.materialIds;
 
     // 1. Generate query embedding vector (gemini-embedding-001, 3072 dims)
     const tEmbedStart = performance.now();
@@ -67,6 +69,13 @@ export class RAGService {
 
     // 2. Query PostgreSQL pgvector with cosine distance (<=>)
     const tVectorStart = performance.now();
+    const hasMaterialFilter = Array.isArray(materialIds) && materialIds.length > 0;
+    const materialClause = hasMaterialFilter ? `AND dc."materialId" = ANY($4::text[])` : "";
+    const queryParams: any[] = [vectorLiteral, courseId, topK];
+    if (hasMaterialFilter) {
+      queryParams.push(materialIds);
+    }
+
     const rawResults = await prisma.$queryRawUnsafe<
       Array<{
         chunkId: string;
@@ -94,12 +103,11 @@ export class RAGService {
       FROM "DocumentChunk" dc
       JOIN "Material" m ON m.id = dc."materialId"
       WHERE m."courseId" = $2 AND dc.embedding IS NOT NULL
+        ${materialClause}
       ORDER BY (dc.embedding <=> $1::vector) ASC
       LIMIT $3;
       `,
-      vectorLiteral,
-      courseId,
-      topK
+      ...queryParams
     );
     const vectorSearchMs = Math.round(performance.now() - tVectorStart);
 
@@ -125,7 +133,7 @@ export class RAGService {
   public async retrieveRelevantChunks(
     query: string,
     courseId: string,
-    options?: { topK?: number; minSimilarity?: number }
+    options?: { topK?: number; minSimilarity?: number; materialIds?: string[] }
   ): Promise<RetrievedChunk[]> {
     const result = await this.retrieveRelevantChunksWithTiming(query, courseId, options);
     return result.chunks;

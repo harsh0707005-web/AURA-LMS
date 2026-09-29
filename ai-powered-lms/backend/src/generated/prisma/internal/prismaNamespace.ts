@@ -1847,6 +1847,7 @@ export const QuizScalarFieldEnum = {
   totalQuestions: 'totalQuestions',
   isAiGenerated: 'isAiGenerated',
   published: 'published',
+  idempotencyKey: 'idempotencyKey',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

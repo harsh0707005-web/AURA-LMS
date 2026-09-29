@@ -52,7 +52,14 @@ export async function addQuiz(req: AuthRequest, res: Response, next: NextFunctio
     }
 
     const courseId = getParam(req.params.courseId);
-    const quiz = await createQuiz(courseId, req.body, req.user.userId, req.user.role);
+    const headerIdempotencyKey = req.headers["idempotency-key"];
+    const input = {
+      ...req.body,
+      ...(typeof headerIdempotencyKey === "string" && headerIdempotencyKey.trim() && {
+        idempotencyKey: headerIdempotencyKey.trim(),
+      }),
+    };
+    const quiz = await createQuiz(courseId, input, req.user.userId, req.user.role);
 
     res.status(201).json({
       success: true,

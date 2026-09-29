@@ -105,7 +105,7 @@ export default function QuizGeneratorModal({
   };
 
   const handlePublish = async () => {
-    if (!previewData || !courseId) return;
+    if (!previewData || !courseId || loading || publishing) return;
 
     if (!previewData.isGrounded && !fallbackAcknowledged) {
       setErrorMessage("Please acknowledge the general curriculum fallback before publishing.");
@@ -116,14 +116,20 @@ export default function QuizGeneratorModal({
     setErrorMessage("");
 
     try {
+      const idempotencyKey = `pub_quiz_${courseId}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       await apiRequest(`/courses/${courseId}/quizzes`, {
         method: "POST",
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
         body: JSON.stringify({
           title: previewData.quizTitle || `${topic.trim()} Assessment (${difficulty})`,
           topic: topic.trim(),
           difficulty,
           timeLimitMinutes: timeLimit,
           isAiGenerated: true,
+          fallbackAcknowledged: previewData.isGrounded ? true : fallbackAcknowledged,
+          idempotencyKey,
           questions: previewData.questions,
         }),
       });
@@ -265,6 +271,14 @@ export default function QuizGeneratorModal({
         {step === "preview" && previewData && (
           <div className="flex flex-col flex-1 overflow-hidden text-xs">
             {/* Grounding Banner */}
+            {loading && (
+              <div className="mb-3 p-2.5 bg-blue-50 border border-blue-200 text-blue-800 rounded shrink-0 flex items-center space-x-2">
+                <span className="inline-block w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                <span className="font-semibold text-xs">
+                  Regenerating questions with Gemini 3.7 Flash... Preview is locked.
+                </span>
+              </div>
+            )}
             {previewData.isGrounded ? (
               <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded shrink-0">
                 <div className="flex items-center space-x-1.5 font-semibold text-emerald-800">
@@ -298,7 +312,7 @@ export default function QuizGeneratorModal({
             )}
 
             {/* Questions Preview List */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-3">
+            <div className={`flex-1 overflow-y-auto space-y-4 pr-1 mb-3 ${loading ? "opacity-40 pointer-events-none" : ""}`}>
               {previewData.questions.map((q, qIdx) => (
                 <div key={qIdx} className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -364,8 +378,8 @@ export default function QuizGeneratorModal({
               <button
                 type="button"
                 onClick={() => setStep("configure")}
-                disabled={publishing}
-                className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 font-semibold rounded cursor-pointer"
+                disabled={loading || publishing}
+                className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 font-semibold rounded cursor-pointer disabled:opacity-50"
               >
                 ← Back / Edit Parameters
               </button>
@@ -374,14 +388,14 @@ export default function QuizGeneratorModal({
                   type="button"
                   onClick={(e) => handleGeneratePreview(e as any)}
                   disabled={loading || publishing}
-                  className="px-3 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded cursor-pointer"
+                  className="px-3 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Regenerate
+                  {loading ? "Regenerating..." : "Regenerate"}
                 </button>
                 <button
                   type="button"
                   onClick={handlePublish}
-                  disabled={publishing || (!previewData.isGrounded && !fallbackAcknowledged)}
+                  disabled={loading || publishing || (!previewData.isGrounded && !fallbackAcknowledged)}
                   className="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {publishing && (

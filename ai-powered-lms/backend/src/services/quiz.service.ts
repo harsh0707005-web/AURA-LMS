@@ -120,14 +120,12 @@ export async function createQuiz(
     throw Object.assign(new Error("Quiz title and topic are required"), { statusCode: 400 });
   }
 
-  // Enforce ungrounded fallback publication confirmation
+  // ALL AI-generated publishes require explicit fallbackAcknowledged confirmation.
+  // We do not trust client-provided sourceCitation as proof of grounding.
   if (input.isAiGenerated && questions && questions.length > 0) {
-    const hasAnyCitation = questions.some(
-      (q) => typeof q.sourceCitation === "string" && q.sourceCitation.trim().length > 0
-    );
-    if (!hasAnyCitation && !input.fallbackAcknowledged) {
+    if (!input.fallbackAcknowledged) {
       throw Object.assign(
-        new Error("Forbidden: Cannot publish an ungrounded AI quiz without explicit fallbackAcknowledged confirmation"),
+        new Error("Forbidden: Cannot publish an AI-generated quiz without explicit fallbackAcknowledged confirmation"),
         { statusCode: 400 }
       );
     }
@@ -182,8 +180,13 @@ export async function createQuiz(
     include: includeClause,
   });
   if (existing) {
-    // Authorization already verified above — return the existing quiz for this key.
-    // The UNIQUE constraint ensures no two different quizzes share the same key.
+    // Verify this key belongs to the same course to prevent cross-course key reuse.
+    if (existing.courseId !== courseId) {
+      throw Object.assign(
+        new Error("Idempotency key collision: key is already bound to a different course"),
+        { statusCode: 409 }
+      );
+    }
     return existing;
   }
 
@@ -204,7 +207,16 @@ export async function createQuiz(
             where: { idempotencyKey },
             include: includeClause,
           });
-          if (winner) return winner;
+          if (winner) {
+            // Apply the same course-scope protection on the winner row
+            if (winner.courseId !== courseId) {
+              throw Object.assign(
+                new Error("Idempotency key collision: key is already bound to a different course"),
+                { statusCode: 409 }
+              );
+            }
+            return winner;
+          }
         }
         throw err;
       }

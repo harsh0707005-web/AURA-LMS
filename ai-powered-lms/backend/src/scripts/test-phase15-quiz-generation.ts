@@ -1307,13 +1307,13 @@ export async function runPhase15Tests() {
       // We verify by checking the courseId of the returned quiz.
       crossCourseError = "succeeded without error — verifying returned quiz scope";
     } catch (err: any) {
-      if (err.statusCode === 409 || err.message?.includes("different course")) {
+      if (err.statusCode === 409) {
         crossCourseKeyRejected = true;
         crossCourseError = err.message;
       } else {
-        // Could also be rejected because the key is found but bound to different courseId
-        crossCourseKeyRejected = true;
-        crossCourseError = `Rejected with ${err.statusCode}: ${err.message}`;
+        // Any other error (wrong status, unexpected exception) is a test failure.
+        crossCourseKeyRejected = false;
+        crossCourseError = `Expected 409 but got ${err.statusCode ?? "unknown"}: ${err.message}`;
       }
     }
 

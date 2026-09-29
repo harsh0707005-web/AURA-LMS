@@ -68,6 +68,17 @@ export default function QuizGeneratorModal({
     onClose();
   };
 
+  /** Closes the modal unconditionally after a successful publish.
+   *  Does NOT check the in-flight guard — publishing is still true
+   *  when this is called, so handleClose() would silently bail. */
+  const closeAfterSuccess = () => {
+    setPreviewData(null);
+    setStep("configure");
+    setErrorMessage("");
+    setFallbackAcknowledged(false);
+    onClose();
+  };
+
   const handleGeneratePreview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseId || !topic.trim()) {
@@ -135,7 +146,9 @@ export default function QuizGeneratorModal({
       });
 
       onQuizCreated();
-      handleClose();
+      // Use dedicated success-close path that bypasses the in-flight guard.
+      // publishing is still true here so handleClose() would silently return.
+      closeAfterSuccess();
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to publish quiz");
     } finally {

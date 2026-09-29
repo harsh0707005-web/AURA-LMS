@@ -310,6 +310,82 @@ export async function generateQuizQuestions(
   // Clamp question count between 1 and 10
   const effectiveCount = Math.max(1, Math.min(10, Number(questionCount) || 3));
 
+  // 1.5. Early Idempotency Check — BEFORE RAG retrieval and LLM generation.
+  //
+  // If a non-null idempotency key is supplied we check the database NOW so that
+  // a retry with an existing key returns the stored quiz without calling the
+  // embedding model or Gemini at all.
+  //
+  // The request fingerprint (courseId + topic + difficulty + effectiveCount) is
+  // derived from the stored quiz's own persisted fields — no extra column needed.
+  // If the key exists but the fingerprint does not match, we throw 409 (collision).
+  const idempotencyKey = (saveImmediately && input.idempotencyKey?.trim()) ? input.idempotencyKey.trim() : null;
+
+  if (idempotencyKey) {
+    const existingQuiz = await prisma.quiz.findUnique({
+      where: { idempotencyKey },
+      include: {
+        questions: { orderBy: { orderIndex: "asc" as const } },
+      },
+    });
+
+    if (existingQuiz) {
+      // Validate course-scope: the key must not be reused across different courses.
+      if (existingQuiz.courseId !== courseId) {
+        throw Object.assign(
+          new Error("Idempotency key collision: key is already bound to a different course"),
+          { statusCode: 409 }
+        );
+      }
+
+      // Validate request fingerprint: stored quiz fields must match the incoming request.
+      // This prevents a caller from silently receiving a stale quiz for a different topic/difficulty.
+      const storedTopic = existingQuiz.topic.trim().toLowerCase();
+      const incomingTopic = topic.trim().toLowerCase();
+      const storedDifficulty = existingQuiz.difficulty as string;
+      const storedCount = existingQuiz.totalQuestions;
+
+      if (
+        storedTopic !== incomingTopic ||
+        storedDifficulty !== difficulty ||
+        storedCount !== effectiveCount
+      ) {
+        throw Object.assign(
+          new Error(
+            `Idempotency key collision: key is bound to a different request ` +
+            `(stored: topic="${existingQuiz.topic}", difficulty="${storedDifficulty}", count=${storedCount}; ` +
+            `requested: topic="${topic.trim()}", difficulty="${difficulty}", count=${effectiveCount})`
+          ),
+          { statusCode: 409 }
+        );
+      }
+
+      // Fingerprint matches — return the stored quiz without any RAG or LLM call.
+      const storedQuestions = existingQuiz.questions.map((q: any) => ({
+        question: q.question,
+        options: q.options,
+        correctOptionIndex: q.correctOptionIndex,
+        explanation: q.explanation,
+        bloomsLevel: q.bloomsLevel as BloomsLevel,
+        difficulty: q.difficulty as Difficulty,
+        topic: q.topic,
+        sourceCitation: "",
+      }));
+
+      return {
+        quizTitle: existingQuiz.title,
+        topic: existingQuiz.topic,
+        difficulty: existingQuiz.difficulty as Difficulty,
+        courseId: existingQuiz.courseId,
+        isGrounded: false,
+        groundingNote: "Returned from idempotency cache — no new LLM call was made.",
+        sources: [],
+        questions: storedQuestions,
+        quiz: existingQuiz,
+      };
+    }
+  }
+
   // 2. Vector Semantic Retrieval via pgvector (applying materialIds BEFORE top-6 retrieval)
   let retrievedChunks: Array<{
     chunkId: string;
@@ -478,10 +554,9 @@ INSTRUCTIONS:
   let persistedQuiz: any = null;
 
   if (saveImmediately) {
-    // Require an explicit idempotency key for AI quiz publication.
-    // This prevents two intentionally different quizzes from colliding
-    // via a deterministic hash of the payload.
-    const idempotencyKey = input.idempotencyKey?.trim() || null;
+    // idempotencyKey is resolved at step 1.5 (null when no key supplied or saveImmediately=false).
+    // By this point the early-return at step 1.5 already handled any existing stored quiz,
+    // so we only need to INSERT here — with P2002 race-catch for concurrent in-process requests.
 
     const timeLimit = Math.max(5, Math.min(180, Number(input.timeLimitMinutes) || 20));
 
@@ -519,45 +594,27 @@ INSTRUCTIONS:
       // No key — straight insert (each publish creates a new quiz)
       persistedQuiz = await prisma.quiz.create({ data: createData, include: includeClause });
     } else {
-      // DB-enforced idempotent path:
-      // Step 1: Check DB for an existing quiz with this key (survives process restarts)
-      const existing = await prisma.quiz.findUnique({
-        where: { idempotencyKey },
-        include: includeClause,
-      });
-
-      if (existing) {
-        // Verify this key belongs to the same course and requestor
-        if (existing.courseId !== courseId) {
-          throw Object.assign(
-            new Error("Idempotency key collision: key is already bound to a different course"),
-            { statusCode: 409 }
-          );
-        }
-        persistedQuiz = existing;
-      } else {
-        // Step 2: In-memory deduplication as an optimisation for concurrent in-process requests
-        const { data: created } = await quizPublicationIdempotency.execute(
-          idempotencyKey,
-          async () => {
-            try {
-              // Step 3: Insert with the key persisted in the DB column
-              return await prisma.quiz.create({ data: createData, include: includeClause });
-            } catch (err: any) {
-              // Step 4: Unique-constraint race — return the winner row
-              if (err?.code === "P2002") {
-                const winner = await prisma.quiz.findUnique({
-                  where: { idempotencyKey },
-                  include: includeClause,
-                });
-                if (winner) return winner;
-              }
-              throw err;
+      // In-memory deduplication as optimisation for concurrent in-process requests.
+      // DB UNIQUE constraint is the correctness guarantee (P2002 race-catch below).
+      const { data: created } = await quizPublicationIdempotency.execute(
+        idempotencyKey,
+        async () => {
+          try {
+            return await prisma.quiz.create({ data: createData, include: includeClause });
+          } catch (err: any) {
+            // Unique-constraint race — return the winner row
+            if (err?.code === "P2002") {
+              const winner = await prisma.quiz.findUnique({
+                where: { idempotencyKey },
+                include: includeClause,
+              });
+              if (winner) return winner;
             }
+            throw err;
           }
-        );
-        persistedQuiz = created;
-      }
+        }
+      );
+      persistedQuiz = created;
     }
   }
 

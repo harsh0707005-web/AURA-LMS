@@ -23,7 +23,7 @@
 
 | Requirement | Description | Acceptance Criteria | Test Harness Verification | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **REQ-AIQ-01** | Structured LLM Quiz Generation | Dedicated service/endpoint `POST /api/ai/generate-quiz` generating syllabus-grounded multi-choice questions with Gemini structured JSON output schema (`responseMimeType: "application/json"`). | Schema requires `sourceCitation`; controller verifies RBAC (`FACULTY`/`ADMIN`); output parsed safely as `unknown` with root object validation. | Verified via Tests 9, 14A, 14B, 15, and 17. | **PASSED** |
+| **REQ-AIQ-01** | Structured LLM Quiz Generation | Dedicated service/endpoint `POST /api/ai/generate-quiz` generating syllabus-grounded multi-choice questions with Gemini structured JSON output schema (`responseMimeType: "application/json"`). | Schema requires `sourceCitation`; controller verifies RBAC (`FACULTY`/`ADMIN`); output parsed safely as `unknown` with root object validation. Verified via Tests 9, 14A, 14B, 15, and 17. | **PASSED** |
 | **REQ-AIQ-02** | Mandatory Server-Side Validation Layer | An independent validation layer in `quiz-generator.service.ts` verifies: 4 options, all options distinct and non-empty, correctOptionIndex in 0..3, valid BloomsLevel enum, valid Difficulty enum, non-empty fields, citations referencing retrieved chunks, and question count matching requested count. Zero persistence on failure. | Verified via Tests 1A–1F, 10A, 10B, and 11. Rejections throw structured error with `statusCode: 422`. Zero DB writes. | **PASSED** |
 | **REQ-AIQ-03** | Course Vector Grounding & Material Filtering | Quizzes generated for courses with materials retrieve pgvector chunks (`DocumentChunk`), providing document name, unit, and page citations in questions. Material filtering is applied directly in vector query before Top-6 limit. | Verified via Tests 6A and 12. Pre-retrieval material filtering isolates target chunks; similarity computed with cosine distance (`<=>`). | **PASSED** |
 | **REQ-AIQ-04** | Ungrounded Fallback Publishing Safety | When no materials match, quiz is generated from general curriculum fallback with `isGrounded: false`. Server prevents ungrounded publication without explicit acknowledgment (`fallbackAcknowledged: true`). Modal enforces acknowledgment checkbox. | Verified via Tests 6B, 13A, 13B, and frontend modal. Server returns `statusCode: 400` if fallback acknowledgment is missing. | **PASSED** |
@@ -43,7 +43,7 @@ Execution Command:
 npm run test:quiz --prefix backend
 ```
 
-**36 Tests Executed | 36 Passed | 0 Failed | 0 Skipped (100% Pass Rate)**
+**40 Tests Executed | 40 Passed | 0 Failed | 0 Skipped (100% Pass Rate)**
 
 ```text
 ================================================================================
@@ -181,14 +181,30 @@ AURA LMS: PHASE 15 SERVER-SIDE LLM QUIZ API COMPREHENSIVE VERIFICATION SUITE
        Expected: Prompt wraps untrusted data in <topic_data> and <syllabus_context> with boundary instructions
        Actual:   Prompt boundaries verified: <topic_data>, <syllabus_context>, and safety instructions active
 
---- Executing Test 16: Server-Side Publication Idempotency ---
-[✅ PASS] 16A. Server-side idempotency returns cached quiz on duplicate publication retry
-       Expected: Same quiz ID returned, database quiz count increases by exactly 1
-       Actual:   Idempotency verified: identical Quiz ID, DB count Δ=1
+--- Executing Test 16: Database-Enforced Publication Idempotency ---
+[✅ PASS] 16A. First publish with idempotency key creates exactly one quiz
+       Expected: Exactly 1 new Quiz row; quiz.id is non-null
+       Actual:   Created Quiz ID 97803000-bada-4dd4-a703-765ca6f4d8b8, DB count Δ=1
 
-[✅ PASS] 16B. Server-side idempotency prevents duplicate insertion under concurrent requests
+[✅ PASS] 16B. Retry with same idempotency key returns existing quiz without creating a duplicate
+       Expected: Same quiz ID returned, DB count unchanged
+       Actual:   Idempotency verified: identical Quiz ID 97803000-bada-4dd4-a703-765ca6f4d8b8, DB count Δ=0
+
+[✅ PASS] 16C. Concurrent publishes with same idempotency key create exactly one quiz
        Expected: Both concurrent requests resolve to the exact same Quiz ID with 1 database insertion
-       Actual:   Concurrent safe: both resolved to identical Quiz ID, DB count Δ=1
+       Actual:   Concurrent safe: both resolved to 6415820c-d3c9-446d-a611-ef959a821bb9, DB count Δ=1
+
+[✅ PASS] 16D. Different idempotency keys create separate independent quizzes
+       Expected: Two distinct Quiz IDs created, DB count increases by 2
+       Actual:   Two separate quizzes: 3c95c7c9-b2e5-4adb-b866-a2ee22abe0e9 and 2cecd9ba-641c-4e9b-b7f9-1e4dbee4ec0f, DB count Δ=2
+
+[✅ PASS] 16E. DB-enforced idempotency persists after in-memory cache is cleared (process restart simulation)
+       Expected: Same quiz ID as original, no new DB row created even after cache eviction
+       Actual:   Persistent idempotency confirmed: quiz ID 97803000-bada-4dd4-a703-765ca6f4d8b8 unchanged, DB count Δ=0
+
+[✅ PASS] 16F. Cross-course idempotency key collision is rejected with 409
+       Expected: HTTP 409 when a key bound to one course is used for a different course
+       Actual:   Correctly rejected cross-course reuse: Idempotency key collision: key is already bound to a different course
 
 --- Executing Test 17: Controller Request Body Runtime Validation ---
 [✅ PASS] 17A. Controller rejects invalid difficulty enum at runtime
@@ -213,7 +229,7 @@ AURA LMS: PHASE 15 SERVER-SIDE LLM QUIZ API COMPREHENSIVE VERIFICATION SUITE
 
 --- Cleaning up Phase 15 test entities ---
 ================================================================================
-PHASE 15 TEST RESULTS SUMMARY: 36 PASSED | 0 FAILED | 0 SKIPPED
+PHASE 15 TEST RESULTS SUMMARY: 40 PASSED | 0 FAILED | 0 SKIPPED
 ================================================================================
 ```
 

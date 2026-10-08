@@ -4,6 +4,8 @@ import {
   CreateQuizQuestionInput,
   SubmitQuizAttemptInput,
 } from "../types/academic.types.js";
+import { quizPublicationIdempotency } from "../lib/idempotency.js";
+
 
 export async function getQuizzesByCourse(courseId: string, role: string) {
   const where: { courseId: string; published?: boolean } = { courseId };
@@ -78,6 +80,26 @@ export async function getQuizById(quizId: string, role: string) {
   return quiz;
 }
 
+/**
+ * Creates and publishes a new quiz for a course with DATABASE-ENFORCED idempotency.
+ *
+ * When a non-null `idempotencyKey` is supplied the guarantee is:
+ *   1. Lookup: If a Quiz with that key already exists for the same course and faculty,
+ *      return it immediately without creating a duplicate.
+ *   2. Insert: Attempt to INSERT the new quiz row with the key stored in the DB column.
+ *   3. Race-catch: On a Prisma `P2002` unique-constraint violation (concurrent insert won),
+ *      perform a final `findUnique` by the key and return the winning row.
+ *
+ * The in-memory `IdempotencyManager` is used **only** as a best-effort optimisation to
+ * short-circuit concurrent in-process requests before they reach the DB layer.  It is
+ * NOT the correctness guarantee — the DB UNIQUE constraint is.
+ *
+ * @param courseId Unique ID of the course.
+ * @param input Quiz metadata and questions payload.
+ * @param facultyId Requesting faculty user ID.
+ * @param role Requesting user role ("FACULTY" | "ADMIN").
+ * @returns The newly created or idempotently resolved Quiz record.
+ */
 export async function createQuiz(
   courseId: string,
   input: CreateQuizInput,
@@ -98,36 +120,110 @@ export async function createQuiz(
     throw Object.assign(new Error("Quiz title and topic are required"), { statusCode: 400 });
   }
 
-  const createdQuiz = await prisma.quiz.create({
-    data: {
-      courseId,
-      title: title.trim(),
-      topic: topic.trim(),
-      difficulty: difficulty || "Medium",
-      timeLimitMinutes: timeLimitMinutes || 20,
-      totalQuestions: questions?.length || 0,
-      published: true,
-      questions: questions
-        ? {
-            create: questions.map((q, idx) => ({
-              question: q.question.trim(),
-              options: q.options,
-              correctOptionIndex: q.correctOptionIndex,
-              explanation: q.explanation?.trim() || "",
-              topic: q.topic?.trim() || topic.trim(),
-              difficulty: q.difficulty || difficulty || "Medium",
-              bloomsLevel: q.bloomsLevel || "Understand",
-              orderIndex: idx + 1,
-            })),
-          }
-        : undefined,
-    },
-    include: {
-      questions: true,
-    },
+  // ALL AI-generated publishes require explicit fallbackAcknowledged confirmation.
+  // We do not trust client-provided sourceCitation as proof of grounding.
+  if (input.isAiGenerated && questions && questions.length > 0) {
+    if (!input.fallbackAcknowledged) {
+      throw Object.assign(
+        new Error("Forbidden: Cannot publish an AI-generated quiz without explicit fallbackAcknowledged confirmation"),
+        { statusCode: 400 }
+      );
+    }
+  }
+
+  const idempotencyKey = input.idempotencyKey?.trim() || null;
+
+  /**
+   * Builds the Prisma create data payload shared by both the direct path and
+   * the idempotent path.
+   */
+  const buildCreateData = () => ({
+    courseId,
+    title: title.trim(),
+    topic: topic.trim(),
+    difficulty: difficulty || "Medium",
+    timeLimitMinutes: timeLimitMinutes || 20,
+    totalQuestions: questions?.length || 0,
+    isAiGenerated: Boolean(input.isAiGenerated),
+    published: true,
+    ...(idempotencyKey ? { idempotencyKey } : {}),
+    questions: questions
+      ? {
+          create: questions.map((q, idx) => ({
+            question: q.question.trim(),
+            options: q.options,
+            correctOptionIndex: q.correctOptionIndex,
+            explanation: q.explanation?.trim() || "",
+            topic: q.topic?.trim() || topic.trim(),
+            difficulty: q.difficulty || difficulty || "Medium",
+            bloomsLevel: q.bloomsLevel || "Understand",
+            orderIndex: idx + 1,
+          })),
+        }
+      : undefined,
   });
 
-  return createdQuiz;
+  const includeClause = { questions: true } as const;
+
+  // ── Fast path: no idempotency key – just create directly ─────────────────
+  if (!idempotencyKey) {
+    return await prisma.quiz.create({
+      data: buildCreateData(),
+      include: includeClause,
+    });
+  }
+
+  // ── Idempotent path ───────────────────────────────────────────────────────
+  // Step 1: Check DB for an existing quiz with this key (cross-process safety)
+  const existing = await prisma.quiz.findUnique({
+    where: { idempotencyKey },
+    include: includeClause,
+  });
+  if (existing) {
+    // Verify this key belongs to the same course to prevent cross-course key reuse.
+    if (existing.courseId !== courseId) {
+      throw Object.assign(
+        new Error("Idempotency key collision: key is already bound to a different course"),
+        { statusCode: 409 }
+      );
+    }
+    return existing;
+  }
+
+  // Step 2: Use in-memory deduplication as an optimisation for concurrent in-process requests
+  const { data: quiz } = await quizPublicationIdempotency.execute(
+    idempotencyKey,
+    async () => {
+      try {
+        // Step 3: Attempt DB insert with the idempotency key
+        return await prisma.quiz.create({
+          data: buildCreateData(),
+          include: includeClause,
+        });
+      } catch (err: any) {
+        // Step 4: On unique constraint violation (race condition), return the winner row
+        if (err?.code === "P2002") {
+          const winner = await prisma.quiz.findUnique({
+            where: { idempotencyKey },
+            include: includeClause,
+          });
+          if (winner) {
+            // Apply the same course-scope protection on the winner row
+            if (winner.courseId !== courseId) {
+              throw Object.assign(
+                new Error("Idempotency key collision: key is already bound to a different course"),
+                { statusCode: 409 }
+              );
+            }
+            return winner;
+          }
+        }
+        throw err;
+      }
+    }
+  );
+
+  return quiz;
 }
 
 export async function updateQuiz(

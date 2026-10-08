@@ -15,7 +15,8 @@
     "test:rag": "tsc && node dist/scripts/test-phase2-rag.js",
     "migrate:s3": "tsc && node dist/scripts/migrate-materials-to-s3.js",
     "restore:s3": "tsc && node dist/scripts/restore-materials-from-s3.js",
-    "test:s3": "tsc && node dist/scripts/test-phase14-s3.js"
+    "test:s3": "tsc && node dist/scripts/test-phase14-s3.js",
+    "test:quiz": "tsc && node dist/scripts/test-phase15-quiz-generation.js"
   },
   "keywords": [],
   "author": "",

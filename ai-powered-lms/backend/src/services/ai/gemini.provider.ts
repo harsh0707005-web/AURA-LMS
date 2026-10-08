@@ -136,6 +136,14 @@ export class GeminiProvider implements LLMProvider {
             genConfig.thinkingConfig = { thinkingBudget: effectiveBudget };
           }
 
+          // Structured Output Configuration
+          if (options?.responseMimeType) {
+            genConfig.responseMimeType = options.responseMimeType;
+          }
+          if (options?.responseSchema) {
+            genConfig.responseSchema = options.responseSchema;
+          }
+
           const response = await client.models.generateContent({
             model: modelName,
             contents: prompt,

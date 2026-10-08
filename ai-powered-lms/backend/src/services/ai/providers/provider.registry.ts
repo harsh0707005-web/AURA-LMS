@@ -20,6 +20,10 @@ class ProviderRegistry {
     this.providers.set(provider.providerId.toLowerCase(), provider);
   }
 
+  public setDefaultProviderId(providerId: string): void {
+    this.defaultProviderId = providerId;
+  }
+
   public getProvider(providerId?: string): LLMProvider {
     const id = (providerId || this.defaultProviderId).toLowerCase();
     const provider = this.providers.get(id);

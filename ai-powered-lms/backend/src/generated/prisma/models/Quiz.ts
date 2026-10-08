@@ -46,6 +46,7 @@ export type QuizMinAggregateOutputType = {
   totalQuestions: number | null
   isAiGenerated: boolean | null
   published: boolean | null
+  idempotencyKey: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -60,6 +61,7 @@ export type QuizMaxAggregateOutputType = {
   totalQuestions: number | null
   isAiGenerated: boolean | null
   published: boolean | null
+  idempotencyKey: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -74,6 +76,7 @@ export type QuizCountAggregateOutputType = {
   totalQuestions: number
   isAiGenerated: number
   published: number
+  idempotencyKey: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -100,6 +103,7 @@ export type QuizMinAggregateInputType = {
   totalQuestions?: true
   isAiGenerated?: true
   published?: true
+  idempotencyKey?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -114,6 +118,7 @@ export type QuizMaxAggregateInputType = {
   totalQuestions?: true
   isAiGenerated?: true
   published?: true
+  idempotencyKey?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -128,6 +133,7 @@ export type QuizCountAggregateInputType = {
   totalQuestions?: true
   isAiGenerated?: true
   published?: true
+  idempotencyKey?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -229,6 +235,7 @@ export type QuizGroupByOutputType = {
   totalQuestions: number
   isAiGenerated: boolean
   published: boolean
+  idempotencyKey: string | null
   createdAt: Date
   updatedAt: Date
   _count: QuizCountAggregateOutputType | null
@@ -266,6 +273,7 @@ export type QuizWhereInput = {
   totalQuestions?: Prisma.IntFilter<"Quiz"> | number
   isAiGenerated?: Prisma.BoolFilter<"Quiz"> | boolean
   published?: Prisma.BoolFilter<"Quiz"> | boolean
+  idempotencyKey?: Prisma.StringNullableFilter<"Quiz"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Quiz"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Quiz"> | Date | string
   questions?: Prisma.QuestionListRelationFilter
@@ -283,6 +291,7 @@ export type QuizOrderByWithRelationInput = {
   totalQuestions?: Prisma.SortOrder
   isAiGenerated?: Prisma.SortOrder
   published?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   questions?: Prisma.QuestionOrderByRelationAggregateInput
@@ -292,6 +301,7 @@ export type QuizOrderByWithRelationInput = {
 
 export type QuizWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  idempotencyKey?: string
   AND?: Prisma.QuizWhereInput | Prisma.QuizWhereInput[]
   OR?: Prisma.QuizWhereInput[]
   NOT?: Prisma.QuizWhereInput | Prisma.QuizWhereInput[]
@@ -308,7 +318,7 @@ export type QuizWhereUniqueInput = Prisma.AtLeast<{
   questions?: Prisma.QuestionListRelationFilter
   course?: Prisma.XOR<Prisma.CourseScalarRelationFilter, Prisma.CourseWhereInput>
   attempts?: Prisma.QuizAttemptListRelationFilter
-}, "id">
+}, "id" | "idempotencyKey">
 
 export type QuizOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -320,6 +330,7 @@ export type QuizOrderByWithAggregationInput = {
   totalQuestions?: Prisma.SortOrder
   isAiGenerated?: Prisma.SortOrder
   published?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.QuizCountOrderByAggregateInput
@@ -342,6 +353,7 @@ export type QuizScalarWhereWithAggregatesInput = {
   totalQuestions?: Prisma.IntWithAggregatesFilter<"Quiz"> | number
   isAiGenerated?: Prisma.BoolWithAggregatesFilter<"Quiz"> | boolean
   published?: Prisma.BoolWithAggregatesFilter<"Quiz"> | boolean
+  idempotencyKey?: Prisma.StringNullableWithAggregatesFilter<"Quiz"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Quiz"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Quiz"> | Date | string
 }
@@ -355,6 +367,7 @@ export type QuizCreateInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionCreateNestedManyWithoutQuizInput
@@ -372,6 +385,7 @@ export type QuizUncheckedCreateInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutQuizInput
@@ -387,6 +401,7 @@ export type QuizUpdateInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUpdateManyWithoutQuizNestedInput
@@ -404,6 +419,7 @@ export type QuizUncheckedUpdateInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutQuizNestedInput
@@ -420,6 +436,7 @@ export type QuizCreateManyInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -433,6 +450,7 @@ export type QuizUpdateManyMutationInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -447,6 +465,7 @@ export type QuizUncheckedUpdateManyInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -471,6 +490,7 @@ export type QuizCountOrderByAggregateInput = {
   totalQuestions?: Prisma.SortOrder
   isAiGenerated?: Prisma.SortOrder
   published?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -490,6 +510,7 @@ export type QuizMaxOrderByAggregateInput = {
   totalQuestions?: Prisma.SortOrder
   isAiGenerated?: Prisma.SortOrder
   published?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -504,6 +525,7 @@ export type QuizMinOrderByAggregateInput = {
   totalQuestions?: Prisma.SortOrder
   isAiGenerated?: Prisma.SortOrder
   published?: Prisma.SortOrder
+  idempotencyKey?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -605,6 +627,7 @@ export type QuizCreateWithoutCourseInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionCreateNestedManyWithoutQuizInput
@@ -620,6 +643,7 @@ export type QuizUncheckedCreateWithoutCourseInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutQuizInput
@@ -665,6 +689,7 @@ export type QuizScalarWhereInput = {
   totalQuestions?: Prisma.IntFilter<"Quiz"> | number
   isAiGenerated?: Prisma.BoolFilter<"Quiz"> | boolean
   published?: Prisma.BoolFilter<"Quiz"> | boolean
+  idempotencyKey?: Prisma.StringNullableFilter<"Quiz"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Quiz"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Quiz"> | Date | string
 }
@@ -678,6 +703,7 @@ export type QuizCreateWithoutQuestionsInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   course: Prisma.CourseCreateNestedOneWithoutQuizzesInput
@@ -694,6 +720,7 @@ export type QuizUncheckedCreateWithoutQuestionsInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   attempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutQuizInput
@@ -724,6 +751,7 @@ export type QuizUpdateWithoutQuestionsInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   course?: Prisma.CourseUpdateOneRequiredWithoutQuizzesNestedInput
@@ -740,6 +768,7 @@ export type QuizUncheckedUpdateWithoutQuestionsInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutQuizNestedInput
@@ -754,6 +783,7 @@ export type QuizCreateWithoutAttemptsInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionCreateNestedManyWithoutQuizInput
@@ -770,6 +800,7 @@ export type QuizUncheckedCreateWithoutAttemptsInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutQuizInput
@@ -800,6 +831,7 @@ export type QuizUpdateWithoutAttemptsInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUpdateManyWithoutQuizNestedInput
@@ -816,6 +848,7 @@ export type QuizUncheckedUpdateWithoutAttemptsInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutQuizNestedInput
@@ -830,6 +863,7 @@ export type QuizCreateManyCourseInput = {
   totalQuestions?: number
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -843,6 +877,7 @@ export type QuizUpdateWithoutCourseInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUpdateManyWithoutQuizNestedInput
@@ -858,6 +893,7 @@ export type QuizUncheckedUpdateWithoutCourseInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutQuizNestedInput
@@ -873,6 +909,7 @@ export type QuizUncheckedUpdateManyWithoutCourseInput = {
   totalQuestions?: Prisma.IntFieldUpdateOperationsInput | number
   isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
   published?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -927,6 +964,7 @@ export type QuizSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   totalQuestions?: boolean
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   questions?: boolean | Prisma.Quiz$questionsArgs<ExtArgs>
@@ -945,6 +983,7 @@ export type QuizSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   totalQuestions?: boolean
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   course?: boolean | Prisma.CourseDefaultArgs<ExtArgs>
@@ -960,6 +999,7 @@ export type QuizSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   totalQuestions?: boolean
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   course?: boolean | Prisma.CourseDefaultArgs<ExtArgs>
@@ -975,11 +1015,12 @@ export type QuizSelectScalar = {
   totalQuestions?: boolean
   isAiGenerated?: boolean
   published?: boolean
+  idempotencyKey?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type QuizOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "courseId" | "title" | "topic" | "difficulty" | "timeLimitMinutes" | "totalQuestions" | "isAiGenerated" | "published" | "createdAt" | "updatedAt", ExtArgs["result"]["quiz"]>
+export type QuizOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "courseId" | "title" | "topic" | "difficulty" | "timeLimitMinutes" | "totalQuestions" | "isAiGenerated" | "published" | "idempotencyKey" | "createdAt" | "updatedAt", ExtArgs["result"]["quiz"]>
 export type QuizInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | Prisma.Quiz$questionsArgs<ExtArgs>
   course?: boolean | Prisma.CourseDefaultArgs<ExtArgs>
@@ -1010,6 +1051,7 @@ export type $QuizPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     totalQuestions: number
     isAiGenerated: boolean
     published: boolean
+    idempotencyKey: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["quiz"]>
@@ -1447,6 +1489,7 @@ export interface QuizFieldRefs {
   readonly totalQuestions: Prisma.FieldRef<"Quiz", 'Int'>
   readonly isAiGenerated: Prisma.FieldRef<"Quiz", 'Boolean'>
   readonly published: Prisma.FieldRef<"Quiz", 'Boolean'>
+  readonly idempotencyKey: Prisma.FieldRef<"Quiz", 'String'>
   readonly createdAt: Prisma.FieldRef<"Quiz", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Quiz", 'DateTime'>
 }

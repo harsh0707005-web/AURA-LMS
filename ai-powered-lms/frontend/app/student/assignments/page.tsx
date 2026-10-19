@@ -7,12 +7,10 @@ import { Course, Assignment } from "@/lib/types";
 import Topbar from "@/components/layout/Topbar";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
-
-import SkeletonLoader, { CardSkeleton } from "@/components/ui/SkeletonLoader";
+import { CardSkeleton } from "@/components/ui/SkeletonLoader";
 
 export default function StudentAssignmentsPage() {
   const { user } = useAuth();
-  const [courses, setCourses] = useState<Course[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +28,6 @@ export default function StudentAssignmentsPage() {
         setLoading(true);
         const coursesRes = await apiRequest<Course[]>(`/students/${user.id}/courses`);
         if (coursesRes.success && coursesRes.data) {
-          setCourses(coursesRes.data);
 
           const allAssignments: Assignment[] = [];
           for (const c of coursesRes.data) {
@@ -64,7 +61,7 @@ export default function StudentAssignmentsPage() {
       await apiRequest(`/assignments/${submittingAssignment.id}/submissions`, {
         method: "POST",
         body: JSON.stringify({
-          content: submissionContent || "Solution uploaded via student workspace portal.",
+          content: submissionContent || "Solution submitted via student workspace portal.",
           fileUrl: fileUrl || `/uploads/submissions/${Date.now()}_solution.pdf`,
         }),
       });
@@ -77,18 +74,19 @@ export default function StudentAssignmentsPage() {
         setFileUrl("");
         window.location.reload();
       }, 1500);
-    } catch (err: any) {
-      alert(err.message || "Failed to submit assignment");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit assignment";
+      alert(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="Academic Assignments" subtitle="Problem Sets & Lab Submissions" />
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {loading ? (
           <div className="grid md:grid-cols-2 gap-6">
             <CardSkeleton count={4} />
@@ -103,48 +101,58 @@ export default function StudentAssignmentsPage() {
               return (
                 <div
                   key={a.id}
-                  className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs flex flex-col justify-between text-xs space-y-4 card-interactive"
+                  className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 shadow-sm flex flex-col justify-between text-xs space-y-4 hover:border-outline-variant transition-all"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         {a.course && (
-                          <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-900 font-bold border border-blue-200 text-[10px] tracking-wider uppercase">
+                          <span className="px-2.5 py-0.5 rounded-md bg-primary-fixed text-primary font-bold border border-primary/20 font-label-sm text-[10px] tracking-wider uppercase">
                             {a.course.code}
                           </span>
                         )}
-                        <span className="font-semibold text-slate-500">{a.totalPoints} Points</span>
+                        <span className="font-label-sm text-outline font-semibold">
+                          {a.totalPoints} Points
+                        </span>
                       </div>
 
-                      <Badge
-                        variant={isGraded ? "success" : isSubmitted ? "info" : "warning"}
-                      >
-                        {isGraded ? `Graded: ${submission?.score}/${a.totalPoints}` : isSubmitted ? "Submitted" : "Pending"}
+                      <Badge variant={isGraded ? "success" : isSubmitted ? "info" : "warning"}>
+                        {isGraded
+                          ? `Graded: ${submission?.score}/${a.totalPoints}`
+                          : isSubmitted
+                          ? "Submitted"
+                          : "Pending"}
                       </Badge>
                     </div>
 
-                    <h3 className="text-sm font-bold text-slate-900 mb-1.5">{a.title}</h3>
-                    <p className="text-slate-600 leading-relaxed">{a.description}</p>
+                    <h3 className="font-headline-sm text-sm font-bold text-on-surface mb-1.5">
+                      {a.title}
+                    </h3>
+                    <p className="font-body-sm text-on-surface-variant leading-relaxed">
+                      {a.description}
+                    </p>
                   </div>
 
                   {/* Feedback if graded */}
                   {isGraded && submission?.feedback && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900 text-[11px] animate-fade-in">
-                      <strong className="block text-emerald-950 font-bold mb-0.5">Faculty Evaluation Feedback:</strong> {submission.feedback}
+                    <div className="p-3 bg-[#ecfdf5] border border-[#a7f3d0] rounded-xl text-[#065f46] text-[11px] animate-fade-in">
+                      <strong className="block font-bold mb-0.5">Faculty Evaluation Feedback:</strong>{" "}
+                      {submission.feedback}
                     </div>
                   )}
 
-                  <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-slate-500 font-medium">
+                  <div className="pt-3.5 border-t border-surface-container-high flex items-center justify-between">
+                    <span className="font-label-sm text-outline text-[11px]">
                       Due: {new Date(a.dueDate).toLocaleDateString()}
                     </span>
 
                     <button
+                      type="button"
                       onClick={() => setSubmittingAssignment(a)}
-                      className={`px-4 py-2 font-semibold rounded-lg text-xs transition-all cursor-pointer btn-press ${
+                      className={`px-4 py-2 font-semibold rounded-xl text-xs transition-all cursor-pointer shadow-2xs ${
                         isSubmitted
-                          ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300"
-                          : "bg-blue-700 hover:bg-blue-800 text-white shadow-xs"
+                          ? "bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-container-high"
+                          : "bg-primary-container hover:opacity-90 text-on-primary shadow-xs"
                       }`}
                     >
                       {isSubmitted ? "Update Submission" : "Submit Assignment →"}
@@ -163,33 +171,40 @@ export default function StudentAssignmentsPage() {
 
         {/* Submit Modal */}
         {submittingAssignment && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl text-xs">
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Submit Assignment Solution"
+            className="fixed inset-0 z-50 bg-inverse-surface/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+          >
+            <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl max-w-lg w-full p-6 shadow-xl text-xs space-y-4">
+              <div className="flex items-center justify-between pb-3.5 border-b border-surface-container-high">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="font-headline-sm text-sm font-bold text-on-surface">
                     Submit: {submittingAssignment.title}
                   </h3>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
+                  <p className="font-label-sm text-outline text-[11px] mt-0.5">
                     {submittingAssignment.course?.code} • {submittingAssignment.totalPoints} Points
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSubmittingAssignment(null)}
-                  className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer p-1"
+                  className="text-outline hover:text-on-surface p-1 rounded-lg"
+                  aria-label="Close modal"
                 >
-                  ×
+                  <span className="material-symbols-outlined text-[20px]">close</span>
                 </button>
               </div>
 
               {submitSuccess ? (
-                <div className="p-5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-center font-medium animate-fade-in">
+                <div className="p-5 bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] rounded-xl text-center font-medium animate-fade-in">
                   ✓ Assignment solution submitted successfully!
                 </div>
               ) : (
                 <form onSubmit={handleSubmitSolution} className="space-y-4">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1.5">
+                    <label className="block font-semibold text-on-surface mb-1.5">
                       Solution Notes / Methodology
                     </label>
                     <textarea
@@ -197,35 +212,35 @@ export default function StudentAssignmentsPage() {
                       value={submissionContent}
                       onChange={(e) => setSubmissionContent(e.target.value)}
                       placeholder="Briefly describe your solution approach or paste execution output..."
-                      className="w-full bg-white border border-slate-300 rounded-lg p-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                      className="w-full bg-surface-container-low border border-surface-container-high rounded-xl p-3 text-on-surface placeholder:text-outline focus:outline-hidden focus:ring-1 focus:ring-primary font-body-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1.5">
+                    <label className="block font-semibold text-on-surface mb-1.5">
                       Attached File URL or Artifact Link
                     </label>
                     <input
                       type="text"
                       value={fileUrl}
                       onChange={(e) => setFileUrl(e.target.value)}
-                      placeholder="e.g. /submissions/harsh_lab2_solution.pdf"
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                      placeholder="e.g. /submissions/student_lab2_solution.pdf"
+                      className="w-full bg-surface-container-low border border-surface-container-high rounded-xl p-2.5 text-on-surface placeholder:text-outline focus:outline-hidden focus:ring-1 focus:ring-primary font-body-sm"
                     />
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2.5">
+                  <div className="pt-3 border-t border-surface-container-high flex justify-end gap-2.5">
                     <button
                       type="button"
                       onClick={() => setSubmittingAssignment(null)}
-                      className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer transition-colors"
+                      className="px-4 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container font-semibold cursor-pointer transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-5 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-semibold shadow-xs cursor-pointer transition-all btn-press"
+                      className="px-5 py-2 rounded-xl bg-primary-container hover:opacity-90 disabled:opacity-50 text-on-primary font-semibold shadow-xs cursor-pointer transition-opacity"
                     >
                       {submitting ? "Submitting..." : "Submit to Instructor →"}
                     </button>

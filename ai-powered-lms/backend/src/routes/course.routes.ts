@@ -13,6 +13,7 @@ import { listMaterials, addMaterial } from "../controllers/material.controller.j
 import { authenticate } from "../middleware/auth.middleware.js";
 import { authorizeRoles } from "../middleware/role.middleware.js";
 import { uploadMaterialPdf } from "../middleware/upload.middleware.js";
+import { createRateLimiter } from "../middleware/security.middleware.js";
 
 const router = Router();
 
@@ -48,6 +49,7 @@ router.post(
   "/:courseId/materials",
   authenticate,
   authorizeRoles("FACULTY", "ADMIN"),
+  createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, message: "Too many uploads. Please try again later." }),
   uploadMaterialPdf.single("file"),
   addMaterial
 );

@@ -6,8 +6,38 @@ import {
 } from "../types/academic.types.js";
 import { quizPublicationIdempotency } from "../lib/idempotency.js";
 
+export function validateQuizAnswers(questions: Array<{ id: string; options: string[] }>, answers: SubmitQuizAttemptInput["answers"]): void {
+  if (!Array.isArray(answers)) throw Object.assign(new Error("Answers must be an array"), { statusCode: 400 });
+  const questionMap = new Map(questions.map((q) => [q.id, q]));
+  const submitted = new Set<string>();
+  for (const item of answers) {
+    if (!item || typeof item.questionId !== "string" || !questionMap.has(item.questionId)) throw Object.assign(new Error("Each answer must reference a question in this quiz"), { statusCode: 400 });
+    if (submitted.has(item.questionId)) throw Object.assign(new Error("Each quiz question may only be answered once"), { statusCode: 400 });
+    const question = questionMap.get(item.questionId)!;
+    if (!Number.isInteger(item.selectedOptionIndex) || item.selectedOptionIndex < 0 || item.selectedOptionIndex >= question.options.length) throw Object.assign(new Error("Each answer must contain a valid option index for its question"), { statusCode: 400 });
+    submitted.add(item.questionId);
+  }
+}
 
-export async function getQuizzesByCourse(courseId: string, role: string) {
+
+async function requireActiveEnrollment(studentId: string, courseId: string): Promise<void> {
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { studentId_courseId: { studentId, courseId } },
+    select: { status: true },
+  });
+
+  if (!enrollment || enrollment.status !== "ACTIVE") {
+    throw Object.assign(new Error("Forbidden: An active course enrollment is required"), { statusCode: 403 });
+  }
+}
+
+export async function getQuizzesByCourse(courseId: string, userId: string, role: string) {
+  if (role === "STUDENT") {
+    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+    if (!course) throw Object.assign(new Error("Course not found"), { statusCode: 404 });
+    await requireActiveEnrollment(userId, courseId);
+  }
+
   const where: { courseId: string; published?: boolean } = { courseId };
   if (role === "STUDENT") {
     where.published = true;
@@ -40,7 +70,7 @@ export async function getQuizzesByCourse(courseId: string, role: string) {
   });
 }
 
-export async function getQuizById(quizId: string, role: string) {
+export async function getQuizById(quizId: string, userId: string, role: string) {
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
     include: {
@@ -75,6 +105,13 @@ export async function getQuizById(quizId: string, role: string) {
 
   if (!quiz) {
     throw Object.assign(new Error("Quiz not found"), { statusCode: 404 });
+  }
+
+  if (role === "STUDENT") {
+    if (!quiz.published) {
+      throw Object.assign(new Error("Quiz is not available"), { statusCode: 404 });
+    }
+    await requireActiveEnrollment(userId, quiz.courseId);
   }
 
   return quiz;
@@ -343,8 +380,20 @@ export async function addQuestionToQuiz(
 export async function submitQuizAttempt(
   quizId: string,
   studentId: string,
+  role: string,
   input: SubmitQuizAttemptInput
 ) {
+  // The route role check protects the HTTP path, but this service is also
+  // called by scripts and the legacy submit route.  Resolve the current role
+  // from the database so a stale or forged token cannot submit an attempt.
+  const caller = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { role: true },
+  });
+  if (!caller || caller.role !== "STUDENT" || role !== "STUDENT") {
+    throw Object.assign(new Error("Forbidden: Only students can submit quiz attempts"), { statusCode: 403 });
+  }
+
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
     include: {
@@ -357,12 +406,34 @@ export async function submitQuizAttempt(
     throw Object.assign(new Error("Quiz not found"), { statusCode: 404 });
   }
 
+  if (!quiz.published) {
+    throw Object.assign(new Error("Quiz is not available for submission"), { statusCode: 403 });
+  }
+
+  await requireActiveEnrollment(studentId, quiz.courseId);
+
   const totalQuestions = quiz.questions.length;
   if (totalQuestions === 0) {
     throw Object.assign(new Error("Cannot attempt an empty quiz"), { statusCode: 400 });
   }
 
+  validateQuizAnswers(quiz.questions, input?.answers);
+
   const questionMap = new Map(quiz.questions.map((q) => [q.id, q]));
+  const submittedQuestionIds = new Set<string>();
+  for (const item of input.answers) {
+    if (!item || typeof item.questionId !== "string" || !questionMap.has(item.questionId)) {
+      throw Object.assign(new Error("Each answer must reference a question in this quiz"), { statusCode: 400 });
+    }
+    if (submittedQuestionIds.has(item.questionId)) {
+      throw Object.assign(new Error("Each quiz question may only be answered once"), { statusCode: 400 });
+    }
+    const question = questionMap.get(item.questionId)!;
+    if (!Number.isInteger(item.selectedOptionIndex) || item.selectedOptionIndex < 0 || item.selectedOptionIndex >= question.options.length) {
+      throw Object.assign(new Error("Each answer must contain a valid option index for its question"), { statusCode: 400 });
+    }
+    submittedQuestionIds.add(item.questionId);
+  }
   let correctCount = 0;
   const weakTopics: Set<string> = new Set();
   const answersData: {

@@ -15,9 +15,29 @@ Base URL: `http://localhost:5000/api`
 | `JWT_SECRET` | String | *Required* | Secret for signing HS256 auth tokens |
 | `GEMINI_API_KEY` | String | *Required* | Google Gemini API key (backend only) |
 | `GEMINI_EMBEDDING_MODEL` | String | `gemini-embedding-001` | 3072-dimensional vector embedding model |
-| `GEMINI_GENERATION_MODEL` | String | `gemini-flash-latest` | Grounded academic completion model |
+| `GEMINI_GENERATION_MODEL` | String | `gemini-3.7-flash` | Grounded academic completion model; fallback attempts are reported separately |
+| `GEMINI_FALLBACK_MODELS` | CSV | built-in Gemini fallback list | Optional ordered fallback models; fallback is recorded in telemetry |
+| `GEMINI_THINKING_BUDGET` | Number | `0` | Thinking budget for normal tutor requests |
+| `GEMINI_COMPLEX_THINKING_BUDGET` | Number | `1024` | Thinking budget for proof/derivation requests |
+| `GEMINI_REQUEST_TIMEOUT_MS` | Number | `45000` | Per-network-attempt Gemini timeout (the SDK requires at least 10 seconds) |
+| `GEMINI_EMBEDDING_BUDGET_MS` | Number | `30000` | Total embedding budget across embedding retries |
+| `GEMINI_GENERATION_BUDGET_MS` | Number | `90000` | Total normal tutor-generation budget across retries/fallbacks |
+| `GEMINI_COMPLEX_GENERATION_BUDGET_MS` | Number | `120000` | Total complex tutor-generation budget |
+| `GEMINI_MAX_ATTEMPTS_PER_MODEL` | Number | `1` | Maximum attempts for one generation model; fallback models remain available |
+| `GEMINI_MAX_TOTAL_ATTEMPTS` | Number | `4` | Maximum generation attempts across the fallback chain |
+| `GEMINI_TUTOR_MAX_OUTPUT_TOKENS` | Number | `1200` | Conservative output cap for normal tutor answers |
+| `GEMINI_TUTOR_COMPLEX_MAX_OUTPUT_TOKENS` | Number | `1600` | Output cap for complex tutor answers |
+| `DEFAULT_LLM_PROVIDER` | String | `gemini` | Active completion provider; Groq is opt-in and does not replace Gemini embeddings |
+| `GROQ_API_KEY` | String | *Unset* | Optional Groq credential; live Groq calls are unavailable when unset |
+| `GROQ_MODEL` | String | `openai/gpt-oss-20b` | Optional Groq completion model |
+| `GROQ_API_URL` | String | Groq chat-completions endpoint | Optional OpenAI-compatible endpoint override |
+| `GROQ_TIMEOUT_MS` | Number | `30000` | Per-attempt Groq timeout |
 | `RAG_TOP_K` | Number | `5` | Maximum number of chunks to retrieve |
 | `RAG_MIN_SIMILARITY` | Number | `0.55` | Minimum cosine similarity threshold (1 - distance) |
+| `RAG_MAX_CONTEXT_CHARS` | Number | `10000` | Maximum retrieved-context characters sent to the tutor |
+| `RAG_MAX_HISTORY_CHARS` | Number | `4000` | Maximum conversation-history characters sent to the tutor |
+
+The frontend uses `NEXT_PUBLIC_API_URL` for the backend base URL and an optional `NEXT_PUBLIC_AI_REQUEST_TIMEOUT_MS` client abort window. The default client window is `125000` ms and does not change server-side provider budgets. `AI_MESSAGE_WORKFLOW_TIMEOUT_MS` controls the durable AI-message workflow deadline and defaults to `120000` ms. A browser disconnect does not cancel server-side processing; clients should reconcile through the idempotency-key status endpoint.
 
 ---
 
@@ -33,7 +53,53 @@ Base URL: `http://localhost:5000/api`
 
 ---
 
-## 3. Authentication & Profile Endpoints
+## 3. Institution-Controlled Registration
+
+Public registration never creates an administrator account and never grants `FACULTY` directly.
+
+### Student registration
+
+`POST /api/auth/register` accepts an application type rather than an authorization role:
+
+```json
+{
+  "name": "Approved Student",
+  "email": "student@college.edu",
+  "password": "Password123",
+  "accountType": "STUDENT",
+  "enrollmentNo": "BE-2024-CS-001",
+  "department": "Computer Engineering"
+}
+```
+
+The enrollment number and normalized email must already exist together in the administrator-managed `StudentRegistry`, and the row must be active and unclaimed. The account remains pending until email verification completes.
+
+### Faculty application
+
+Use the same endpoint with `accountType: "FACULTY"` and an `employeeId`. The account is stored as a pending application and cannot log in or access faculty resources until an active administrator approves it.
+
+### Email verification
+
+`POST /api/auth/verify-email` with `{ "token": "<raw token>" }` activates an eligible student account. Tokens are hashed at rest, expire after 24 hours, and are single-use. If no email provider is configured, registration remains pending and no verification token is returned by the API.
+
+`POST /api/auth/resend-verification` accepts `{ "email": "student@college.edu" }` and returns a generic response to reduce account enumeration.
+
+### Administrator provisioning and review
+
+An initial administrator must be created through the existing restricted seed or operational provisioning process; there is no public administrator bootstrap endpoint.
+
+After signing in as an active administrator:
+
+- `POST /api/admin/student-registry/import` imports approved records as `{ "records": [{ "enrollmentNo": "...", "email": "...", "active": true }] }`.
+- `GET /api/admin/faculty-applications` lists applications for review.
+- `POST /api/admin/faculty-applications/:id/approve` activates the validated applicant as `FACULTY`.
+- `POST /api/admin/faculty-applications/:id/reject` rejects the application.
+
+Required backend environment variables for real email delivery are `RESEND_API_KEY`, `VERIFICATION_EMAIL_FROM`, and a secure `FRONTEND_URL`. The token is sent in a URL fragment so it is not submitted to normal web-server request logs. Without these variables, accounts remain inactive.
+
+---
+
+## 4. Authentication & Profile Endpoints
 
 ### `POST /api/auth/register`
 - **Description**: Registers a new Student or Faculty account. Admin accounts cannot be registered publicly.
@@ -122,7 +188,7 @@ Base URL: `http://localhost:5000/api`
 - **Access**: Authenticated
 
 ### `POST /api/ai/conversations/:id/messages`
-- **Description**: Submits student query $\to$ generates Gemini query vector $\to$ executes PostgreSQL pgvector cosine distance search (`<=>`) scoped to the conversation course $\to$ constructs grounded prompt $\to$ calls Gemini completion model $\to$ stores `AIMessage` with source citations.
+- **Description**: Submits a student query $\to$ generates a Gemini query vector $\to$ executes PostgreSQL pgvector cosine distance search (`<=>`) scoped to the conversation course $\to$ constructs a bounded grounded prompt $\to$ calls the configured completion provider (Gemini by default; Groq only when explicitly configured) $\to$ stores `AIMessage` with retrieved source references.
 - **Access**: Authenticated (Owner of conversation)
 - **Request Body**:
 ```json
@@ -130,6 +196,7 @@ Base URL: `http://localhost:5000/api`
   "content": "How does Raft elect a leader and prevent split votes?"
 }
 ```
+- The request must include a unique `Idempotency-Key` header (the same value may also be sent as `idempotencyKey` in the body). The key is scoped to the authenticated user and is bound to the conversation and message payload. Concurrent or repeated submissions cannot create duplicate provider calls. A different payload or conversation with the same key returns `409 Conflict`.
 - **Response `201 Created`**:
 ```json
 {
@@ -163,6 +230,12 @@ Base URL: `http://localhost:5000/api`
   }
 }
 ```
+
+### `GET /api/ai/conversations/:id/messages/status/:key`
+- **Description**: Authenticated status/result lookup for an AI message submission after a timeout or connection interruption.
+- **Access**: Conversation owner with current course authorization.
+- **States**: `PROCESSING`, `COMPLETED`, or `FAILED`.
+- **Retry policy**: Only `FAILED` requests may be retried with the same key. An active `PROCESSING` request, including one that is old, is not reclaimed solely because of age.
 
 ---
 

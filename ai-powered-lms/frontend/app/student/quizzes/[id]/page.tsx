@@ -62,8 +62,9 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
       if (res.success && res.data) {
         setSubmittedAttempt(res.data);
       }
-    } catch (err: any) {
-      alert(err.message || "Failed to submit quiz attempt");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit quiz attempt";
+      alert(msg);
     } finally {
       setSubmitting(false);
     }
@@ -71,18 +72,20 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+      <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
         <Topbar title="Loading Assessment..." />
-        <div className="p-12 text-center text-xs text-slate-500">Preparing quiz questions...</div>
+        <div className="p-12 text-center text-xs text-on-surface-variant font-label-sm">
+          Preparing quiz questions...
+        </div>
       </div>
     );
   }
 
   if (!quiz || !quiz.questions || quiz.questions.length === 0) {
     return (
-      <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+      <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
         <Topbar title="Quiz Unavailable" />
-        <div className="p-12 text-center text-xs text-slate-500">
+        <div className="p-12 text-center text-xs text-on-surface-variant">
           This quiz is empty or unavailable.
         </div>
       </div>
@@ -94,52 +97,62 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
   const allAnswered = questions.every((q) => selectedAnswers[q.id] !== undefined);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar
         title={`${quiz.title}`}
         subtitle={`${quiz.course?.code || "Course"} • Topic: ${quiz.topic}`}
       />
 
-      <main className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6 animate-fade-in">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-6 animate-fade-in">
         {/* Results Screen */}
         {submittedAttempt ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-7 shadow-xs space-y-6 text-xs">
-            <div className="text-center pb-6 border-b border-slate-100">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-3xl shadow-xs">
+          <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 text-xs">
+            <div className="text-center pb-6 border-b border-surface-container-high">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-surface-container-low border border-surface-container-high flex items-center justify-center text-3xl shadow-xs">
                 {submittedAttempt.percentage >= 80 ? "🏆" : submittedAttempt.percentage >= 60 ? "👍" : "⚠️"}
               </div>
-              <h2 className="text-xl font-bold text-slate-900">Assessment Completed</h2>
-              <p className="text-slate-500 mt-1">Your attempt has been scored and analyzed by the evaluation engine.</p>
+              <h2 className="font-headline-sm text-xl font-bold text-on-surface">
+                Assessment Completed
+              </h2>
+              <p className="font-body-sm text-on-surface-variant mt-1 text-xs">
+                Your attempt has been scored and analyzed by the evaluation engine.
+              </p>
 
-              <div className="flex justify-center items-center space-x-8 mt-5">
-                <div className="text-center bg-slate-50 border border-slate-200 rounded-xl px-6 py-3">
-                  <div className="text-3xl font-black text-blue-700">{submittedAttempt.percentage}%</div>
-                  <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Overall Score</div>
+              <div className="flex justify-center items-center gap-6 mt-6">
+                <div className="text-center bg-surface-container-low border border-surface-container-high rounded-2xl px-6 py-3.5">
+                  <div className="font-headline-sm text-3xl font-black text-primary">
+                    {submittedAttempt.percentage}%
+                  </div>
+                  <div className="font-label-sm text-[10px] text-outline uppercase tracking-wider mt-0.5">
+                    Overall Score
+                  </div>
                 </div>
-                <div className="text-center bg-slate-50 border border-slate-200 rounded-xl px-6 py-3">
-                  <div className="text-3xl font-black text-slate-800">
+                <div className="text-center bg-surface-container-low border border-surface-container-high rounded-2xl px-6 py-3.5">
+                  <div className="font-headline-sm text-3xl font-black text-on-surface">
                     {submittedAttempt.score} / {submittedAttempt.totalPoints}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Total Points</div>
+                  <div className="font-label-sm text-[10px] text-outline uppercase tracking-wider mt-0.5">
+                    Total Points
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Weak Topics Diagnostic Alert */}
             {submittedAttempt.weakTopicsIdentified && submittedAttempt.weakTopicsIdentified.length > 0 && (
-              <div className="p-4.5 bg-rose-50 border border-rose-200 rounded-xl animate-fade-in">
-                <div className="font-bold text-rose-950 mb-1 flex items-center space-x-2">
-                  <span>⚠️</span>
+              <div className="p-5 bg-error-container/30 border border-error/30 rounded-2xl space-y-2">
+                <div className="font-headline-sm font-bold text-on-error-container text-xs flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-error">warning</span>
                   <span>Diagnostic Weak Topics Detected</span>
                 </div>
-                <p className="text-rose-700 mb-3 text-[11px]">
+                <p className="font-body-sm text-on-error-container text-[11px]">
                   The diagnostic engine identified mastery gaps in the following syllabus topics:
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {submittedAttempt.weakTopicsIdentified.map((topic, i) => (
                     <span
                       key={i}
-                      className="px-3 py-1 bg-white border border-rose-300 text-rose-900 rounded-lg font-semibold text-[11px] shadow-2xs"
+                      className="px-3 py-1 bg-surface-container-lowest border border-error/40 text-on-error-container rounded-xl font-semibold text-[11px] shadow-2xs font-label-sm"
                     >
                       {topic}
                     </span>
@@ -149,13 +162,18 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
             )}
 
             {/* Questions Review */}
-            <div className="space-y-4 pt-4 border-t border-slate-100">
-              <h3 className="font-bold text-slate-900 text-sm">Question Review & Explanations</h3>
+            <div className="space-y-4 pt-4 border-t border-surface-container-high">
+              <h3 className="font-headline-sm font-bold text-on-surface text-sm">
+                Question Review & Explanations
+              </h3>
               {questions.map((q, idx) => {
                 const userSelected = selectedAnswers[q.id];
                 return (
-                  <div key={q.id} className="p-4.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-                    <div className="font-bold text-slate-900 leading-snug">
+                  <div
+                    key={q.id}
+                    className="p-5 bg-surface-container-low border border-surface-container-high rounded-2xl space-y-3"
+                  >
+                    <div className="font-headline-sm font-bold text-on-surface leading-snug">
                       Q{idx + 1}. {q.question}
                     </div>
 
@@ -165,21 +183,24 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
                         return (
                           <div
                             key={optIdx}
-                            className={`p-2.5 rounded-lg border text-[11px] transition-colors ${
+                            className={`p-3 rounded-xl border text-[11px] transition-colors ${
                               isChosen
-                                ? "bg-blue-100/80 border-blue-400 font-semibold text-blue-950"
-                                : "bg-white border-slate-200 text-slate-700"
+                                ? "bg-primary-fixed/80 border-primary text-primary font-semibold"
+                                : "bg-surface-container-lowest border-surface-container-high text-on-surface"
                             }`}
                           >
-                            {opt} {isChosen && "(Your Answer)"}
+                            {opt} {isChosen && "(Your Selected Answer)"}
                           </div>
                         );
                       })}
                     </div>
 
                     {q.explanation && (
-                      <div className="mt-2.5 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-[11px] leading-relaxed">
-                        <strong className="block font-bold text-blue-950 mb-0.5">Academic Rationale:</strong> {q.explanation}
+                      <div className="mt-2.5 p-3 bg-surface-container-lowest border border-surface-container-high rounded-xl text-on-surface text-[11px] leading-relaxed">
+                        <strong className="block font-headline-sm font-bold text-primary mb-0.5">
+                          Academic Rationale:
+                        </strong>{" "}
+                        {q.explanation}
                       </div>
                     )}
                   </div>
@@ -187,16 +208,16 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
               })}
             </div>
 
-            <div className="pt-4 flex justify-between items-center">
+            <div className="pt-4 flex flex-wrap justify-between items-center gap-3">
               <Link
                 href="/student/quizzes"
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-semibold rounded-xl transition-colors cursor-pointer"
               >
                 ← Back to Quizzes
               </Link>
               <Link
                 href="/student/recommendations"
-                className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold shadow-xs transition-all btn-press cursor-pointer"
+                className="px-5 py-2.5 bg-primary-container hover:opacity-90 text-on-primary rounded-xl font-semibold shadow-xs transition-opacity cursor-pointer"
               >
                 View Diagnostic Recommendations →
               </Link>
@@ -204,24 +225,24 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
           </div>
         ) : (
           /* Active Quiz Interface */
-          <div className="bg-white border border-slate-200 rounded-2xl p-7 shadow-xs space-y-6 text-xs">
+          <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 text-xs">
             {/* Quiz Progress Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center space-x-2.5">
-                <span className="font-bold text-slate-900 text-sm">
+            <div className="flex items-center justify-between pb-4 border-b border-surface-container-high">
+              <div className="flex items-center gap-2.5">
+                <span className="font-headline-sm font-bold text-on-surface text-sm">
                   Question {currentQuestionIndex + 1} of {questions.length}
                 </span>
                 <Badge variant="info">{currentQ.difficulty}</Badge>
               </div>
 
-              <div className="font-semibold text-slate-700 bg-slate-100 border border-slate-200/80 px-3 py-1 rounded-lg text-[11px]">
-                ⏱️ Time Limit: {quiz.timeLimitMinutes} mins
+              <div className="font-label-sm text-[11px] font-semibold text-on-surface bg-surface-container px-3 py-1 rounded-xl border border-surface-container-high">
+                ⏱️ {quiz.timeLimitMinutes} mins limit
               </div>
             </div>
 
             {/* Question Card */}
             <div className="space-y-4">
-              <div className="text-sm font-bold text-slate-900 leading-snug">
+              <div className="font-headline-sm text-sm font-bold text-on-surface leading-snug">
                 {currentQ.question}
               </div>
 
@@ -232,10 +253,10 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
                     <label
                       key={optIdx}
                       onClick={() => handleSelectOption(currentQ.id, optIdx)}
-                      className={`flex items-center space-x-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-blue-50 border-blue-600 text-blue-950 font-semibold shadow-2xs"
-                          : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 text-slate-700"
+                          ? "bg-primary-fixed/60 border-primary text-on-surface font-semibold shadow-2xs"
+                          : "bg-surface-container-low border-surface-container-high hover:border-outline-variant text-on-surface-variant"
                       }`}
                     >
                       <input
@@ -243,9 +264,9 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
                         name={currentQ.id}
                         checked={isSelected}
                         onChange={() => {}}
-                        className="text-blue-700 h-4 w-4"
+                        className="text-primary h-4 w-4"
                       />
-                      <span className="text-xs">{opt}</span>
+                      <span className="text-xs font-body-md">{opt}</span>
                     </label>
                   );
                 })}
@@ -253,27 +274,28 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
             </div>
 
             {/* Pagination & Submission Controls */}
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <div className="pt-4 border-t border-surface-container-high flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
                 disabled={currentQuestionIndex === 0}
                 onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-semibold cursor-pointer transition-colors"
+                className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high disabled:opacity-40 text-on-surface font-semibold cursor-pointer transition-colors"
               >
                 ← Previous
               </button>
 
-              <div className="flex space-x-1.5">
+              <div className="flex gap-1.5 overflow-x-auto py-1">
                 {questions.map((q, idx) => (
                   <button
                     key={q.id}
+                    type="button"
                     onClick={() => setCurrentQuestionIndex(idx)}
-                    className={`h-8 w-8 rounded-lg font-bold text-xs cursor-pointer transition-all btn-press ${
+                    className={`h-8 w-8 rounded-xl font-bold text-xs cursor-pointer transition-all ${
                       currentQuestionIndex === idx
-                        ? "bg-blue-700 text-white shadow-2xs"
+                        ? "bg-primary-container text-on-primary shadow-2xs"
                         : selectedAnswers[q.id] !== undefined
-                        ? "bg-blue-100 text-blue-900 border border-blue-200"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        ? "bg-primary-fixed text-primary border border-primary/20"
+                        : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
                     }`}
                   >
                     {idx + 1}
@@ -284,8 +306,10 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
               {currentQuestionIndex < questions.length - 1 ? (
                 <button
                   type="button"
-                  onClick={() => setCurrentQuestionIndex((prev) => Math.min(questions.length - 1, prev + 1))}
-                  className="px-5 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-semibold shadow-xs cursor-pointer transition-all btn-press"
+                  onClick={() =>
+                    setCurrentQuestionIndex((prev) => Math.min(questions.length - 1, prev + 1))
+                  }
+                  className="px-5 py-2 rounded-xl bg-primary-container hover:opacity-90 text-on-primary font-semibold shadow-xs cursor-pointer transition-opacity"
                 >
                   Next →
                 </button>
@@ -294,7 +318,7 @@ export default function StudentQuizTakerPage({ params }: { params: Promise<{ id:
                   type="button"
                   disabled={!allAnswered || submitting}
                   onClick={handleSubmitQuiz}
-                  className="px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:scale-95 disabled:opacity-50 text-white font-semibold shadow-xs cursor-pointer transition-all btn-press"
+                  className="px-5 py-2 rounded-xl bg-secondary text-on-secondary hover:opacity-90 disabled:opacity-50 font-semibold shadow-xs cursor-pointer transition-opacity"
                 >
                   {submitting ? "Evaluating..." : "Submit Quiz →"}
                 </button>

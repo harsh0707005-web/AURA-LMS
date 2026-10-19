@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { User, UserRole } from "./types";
 import {
   getAuthToken,
@@ -22,25 +23,32 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
 
   useEffect(() => {
+    let timer: number | undefined;
     try {
       const storedToken = getAuthToken();
       const storedUser = getCurrentUser();
 
       if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(storedUser);
-        setStatus("authenticated");
+        timer = window.setTimeout(() => {
+          setToken(storedToken);
+          setUser(storedUser);
+          setStatus("authenticated");
+        }, 0);
       } else {
-        setStatus("unauthenticated");
+        timer = window.setTimeout(() => setStatus("unauthenticated"), 0);
       }
     } catch {
-      setStatus("unauthenticated");
+      timer = window.setTimeout(() => setStatus("unauthenticated"), 0);
     }
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
   }, []);
 
   const login = (newToken: string, newUser: User) => {
@@ -55,9 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setUser(null);
     setStatus("unauthenticated");
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
+    router.push("/login");
   };
 
   const updateUser = (updatedFields: Partial<User>) => {

@@ -9,6 +9,9 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User.js'
+export type * from './models/StudentRegistry.js'
+export type * from './models/FacultyApplication.js'
+export type * from './models/EmailVerificationToken.js'
 export type * from './models/Course.js'
 export type * from './models/Enrollment.js'
 export type * from './models/Material.js'
@@ -21,6 +24,7 @@ export type * from './models/QuizAttempt.js'
 export type * from './models/Answer.js'
 export type * from './models/AIConversation.js'
 export type * from './models/AIMessage.js'
+export type * from './models/AIMessageRequest.js'
 export type * from './models/Document.js'
 export type * from './models/Performance.js'
 export type * from './models/Recommendation.js'

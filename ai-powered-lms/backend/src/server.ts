@@ -12,9 +12,11 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim() === "") {
 
 import prisma from "./lib/prisma.js";
 import { errorHandler } from "./middleware/error.middleware.js";
+import { createRateLimiter, securityHeaders } from "./middleware/security.middleware.js";
 
 // Routes
 import authRoutes from "./routes/auth.routes.js";
+import institutionRoutes from "./routes/institution.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import courseRoutes from "./routes/course.routes.js";
 import materialRoutes from "./routes/material.routes.js";
@@ -31,6 +33,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
+app.disable("x-powered-by");
+if (process.env.TRUST_PROXY === "true") app.set("trust proxy", 1);
+app.use(securityHeaders);
+
 // CORS Configuration
 app.use(
   cors({
@@ -41,7 +47,8 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 
 import { storageService } from "./services/storage/storage.service.js";
 
@@ -122,9 +129,13 @@ app.get("/api/health", async (_req, res) => {
   res.status(200).json({
     success: true,
     message: "AURA LMS backend service is operational",
-    version: "1.0.0",
-    academicProject: "AI-Powered LMS with LLMs and Learning Analytics",
-    storage: storageHealth,
+    ...(process.env.NODE_ENV === "production"
+      ? { status: "ok" }
+      : {
+          version: "1.0.0",
+          academicProject: "AI-Powered LMS with LLMs and Learning Analytics",
+          storage: storageHealth,
+        }),
   });
 });
 
@@ -132,17 +143,20 @@ app.get("/api/health/db", async (_req, res) => {
   try {
     const userCount = await prisma.user.count();
     const courseCount = await prisma.course.count();
-    res.status(200).json({
-      success: true,
-      message: "PostgreSQL database connection is healthy",
-      database: "ai_lms",
-      stats: {
-        totalUsers: userCount,
-        totalCourses: courseCount,
-      },
-    });
+    res.status(200).json(
+      process.env.NODE_ENV === "production"
+        ? { success: true, status: "ok" }
+        : {
+            success: true,
+            message: "PostgreSQL database connection is healthy",
+            database: "ai_lms",
+            stats: { totalUsers: userCount, totalCourses: courseCount },
+          }
+    );
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Database connection failed";
+    const message = process.env.NODE_ENV === "production"
+      ? "Database health check failed"
+      : error instanceof Error ? error.message : "Database connection failed";
     res.status(503).json({
       success: false,
       message: "Database health check failed",
@@ -153,6 +167,7 @@ app.get("/api/health/db", async (_req, res) => {
 
 // Mount API Modules
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", institutionRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/materials", materialRoutes);

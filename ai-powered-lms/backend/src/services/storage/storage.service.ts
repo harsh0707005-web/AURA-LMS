@@ -54,8 +54,8 @@ export class StorageService {
    * Format: materials/courses/{courseId}/{materialId}/{sanitizedFilename}.pdf
    */
   public generateS3Key(courseId: string, materialId: string, originalFilename: string): string {
-    const ext = path.extname(originalFilename).toLowerCase() || ".pdf";
-    const base = path.basename(originalFilename, ext);
+    const ext = ".pdf";
+    const base = path.basename(originalFilename, path.extname(originalFilename));
     const sanitizedBase = base.replace(/[^a-zA-Z0-9_-]/g, "_");
     return `materials/courses/${courseId}/${materialId}/${sanitizedBase}${ext}`;
   }
@@ -76,7 +76,8 @@ export class StorageService {
       const s3Key = this.generateS3Key(courseId, materialId, filename);
       return await this.s3Provider.uploadFile(s3Key, buffer, options);
     } else {
-      const sanitizedFilename = `${materialId}-${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const base = path.basename(filename, path.extname(filename)).replace(/[^a-zA-Z0-9_-]/g, "_");
+      const sanitizedFilename = `${materialId}-${Date.now()}-${base}.pdf`;
       return await this.localProvider.uploadFile(sanitizedFilename, buffer, options);
     }
   }

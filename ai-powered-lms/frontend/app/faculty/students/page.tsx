@@ -6,20 +6,32 @@ import { AtRiskStudent } from "@/lib/types";
 import Topbar from "@/components/layout/Topbar";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/SkeletonLoader";
 
-import SkeletonLoader, { TableSkeleton } from "@/components/ui/SkeletonLoader";
+interface StudentRecord {
+  id: string;
+  name: string;
+  email: string;
+  enrollmentNo?: string;
+  department?: string;
+  _count?: {
+    enrollments?: number;
+    quizAttempts?: number;
+  };
+}
 
 export default function FacultyStudentsPage() {
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
   const [atRiskStudents, setAtRiskStudents] = useState<AtRiskStudent[]>([]);
-  const [activeTab, setActiveTab] = useState<"all" | "at-risk">("at-risk");
+  const [activeTab, setActiveTab] = useState<"at-risk" | "all">("at-risk");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStudentData() {
       try {
         setLoading(true);
-        const studsRes = await apiRequest<any[]>("/students");
+        const studsRes = await apiRequest<StudentRecord[]>("/students");
         if (studsRes.success && studsRes.data) setStudents(studsRes.data);
 
         const riskRes = await apiRequest<AtRiskStudent[]>("/analytics/at-risk");
@@ -34,34 +46,67 @@ export default function FacultyStudentsPage() {
     loadStudentData();
   }, []);
 
+  const filteredStudents = students.filter((s) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      s.email.toLowerCase().includes(q) ||
+      (s.enrollmentNo && s.enrollmentNo.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredAtRisk = atRiskStudents.filter((s) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      s.studentName.toLowerCase().includes(q) ||
+      s.enrollmentNo.toLowerCase().includes(q) ||
+      s.courseCode.toLowerCase().includes(q)
+    );
+  });
+
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="Student Roster & Risk Diagnostics" subtitle="Cohort Monitoring & Interventions" />
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
-        {/* Tab Toggle */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3.5">
-          <div className="flex space-x-2.5">
+      <main className="flex-1 p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
+        {/* Tab & Search Control Bar */}
+        <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab("at-risk")}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all btn-press ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
                 activeTab === "at-risk"
-                  ? "bg-rose-700 text-white shadow-xs"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-2xs"
+                  ? "bg-error text-on-error shadow-xs"
+                  : "bg-surface-container-low text-on-surface hover:bg-surface-container border border-outline-variant/40"
               }`}
             >
-              ⚠️ At-Risk Diagnostic Alerts ({atRiskStudents.length})
+              <span className="material-symbols-outlined text-[16px]">warning</span>
+              <span>At-Risk Diagnostic Alerts ({atRiskStudents.length})</span>
             </button>
             <button
               onClick={() => setActiveTab("all")}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all btn-press ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
                 activeTab === "all"
-                  ? "bg-blue-700 text-white shadow-xs"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-2xs"
+                  ? "bg-primary text-on-primary shadow-xs"
+                  : "bg-surface-container-low text-on-surface hover:bg-surface-container border border-outline-variant/40"
               }`}
             >
-              All Enrolled Students ({students.length})
+              <span className="material-symbols-outlined text-[16px]">group</span>
+              <span>All Enrolled Students ({students.length})</span>
             </button>
+          </div>
+
+          <div className="relative w-72">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search student or roll no..."
+              className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg pl-9 pr-3 py-2 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+            />
           </div>
         </div>
 
@@ -69,21 +114,27 @@ export default function FacultyStudentsPage() {
         {loading ? (
           <TableSkeleton rows={6} cols={6} />
         ) : activeTab === "at-risk" ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
-            <div className="pb-3.5 border-b border-slate-100 mb-4">
-              <h3 className="text-sm font-bold text-slate-900">
-                At-Risk Academic Alert Table ({atRiskStudents.length})
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Students flagged for early faculty intervention based on quiz performance and syllabus module completion
-              </p>
+          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-outline-variant/30 gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-error text-[20px]">troubleshoot</span>
+                  <h3 className="text-sm font-bold text-on-surface">
+                    At-Risk Academic Alert Table ({filteredAtRisk.length})
+                  </h3>
+                </div>
+                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                  Students flagged for early faculty intervention based on quiz performance and syllabus module completion
+                </p>
+              </div>
+              <Badge variant="danger">{filteredAtRisk.length} Flagged</Badge>
             </div>
 
-            {atRiskStudents.length > 0 ? (
+            {filteredAtRisk.length > 0 ? (
               <div className="overflow-x-auto text-xs">
-                <table className="w-full text-left academic-table">
+                <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+                    <tr className="border-b border-outline-variant/30 text-outline uppercase text-[10px] tracking-wider font-mono">
                       <th className="pb-2.5 font-bold">Student Name</th>
                       <th className="pb-2.5 font-bold">Enrollment No</th>
                       <th className="pb-2.5 font-bold">Course</th>
@@ -93,20 +144,22 @@ export default function FacultyStudentsPage() {
                       <th className="pb-2.5 font-bold">Primary Diagnosis & Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {atRiskStudents.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3 font-bold text-slate-900">{s.studentName}</td>
-                        <td className="py-3 text-slate-600 font-mono text-[11px]">{s.enrollmentNo}</td>
-                        <td className="py-3 font-semibold text-slate-700">{s.courseCode}</td>
-                        <td className="py-3 font-bold text-rose-700 font-mono">{s.averageQuizScore}%</td>
-                        <td className="py-3 font-semibold text-slate-700 font-mono">{s.courseProgressPercentage}%</td>
+                  <tbody className="divide-y divide-outline-variant/20">
+                    {filteredAtRisk.map((s) => (
+                      <tr key={s.id} className="hover:bg-surface-container-low/70 transition-colors">
+                        <td className="py-3 font-bold text-on-surface">{s.studentName}</td>
+                        <td className="py-3 text-on-surface-variant font-mono text-[11px]">{s.enrollmentNo}</td>
+                        <td className="py-3 font-semibold text-on-surface">{s.courseCode}</td>
+                        <td className="py-3 font-bold text-error font-mono">{s.averageQuizScore}%</td>
+                        <td className="py-3 font-semibold text-on-surface font-mono">{s.courseProgressPercentage}%</td>
                         <td className="py-3">
                           <Badge variant={s.riskLevel === "HIGH" ? "danger" : "warning"}>
                             {s.riskLevel}
                           </Badge>
                         </td>
-                        <td className="py-3 text-slate-600 max-w-xs text-[11px] leading-relaxed">{s.recommendedIntervention}</td>
+                        <td className="py-3 text-on-surface-variant max-w-xs text-[11px] leading-relaxed">
+                          {s.recommendedIntervention}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -115,45 +168,63 @@ export default function FacultyStudentsPage() {
             ) : (
               <EmptyState
                 title="No At-Risk Students"
-                description="All students in your cohort currently meet academic mastery criteria."
+                description={
+                  searchTerm
+                    ? "No at-risk students match your search filter."
+                    : "All students in your cohort currently meet academic mastery criteria."
+                }
               />
             )}
           </div>
         ) : (
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
-            <h3 className="text-sm font-bold text-slate-900 pb-3.5 border-b border-slate-100 mb-4">
-              Department Student Directory ({students.length})
-            </h3>
+          <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3.5 border-b border-outline-variant/30">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[20px]">groups</span>
+                <h3 className="text-sm font-bold text-on-surface">
+                  Department Student Directory ({filteredStudents.length})
+                </h3>
+              </div>
+              <span className="font-mono text-[11px] text-outline font-semibold uppercase">Student Registry</span>
+            </div>
 
-            {students.length > 0 ? (
+            {filteredStudents.length > 0 ? (
               <div className="overflow-x-auto text-xs">
-                <table className="w-full text-left academic-table">
+                <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+                    <tr className="border-b border-outline-variant/30 text-outline uppercase text-[10px] tracking-wider font-mono">
                       <th className="pb-2.5 font-bold">Name</th>
                       <th className="pb-2.5 font-bold">Institutional Email</th>
                       <th className="pb-2.5 font-bold">Enrollment No</th>
                       <th className="pb-2.5 font-bold">Department</th>
-                      <th className="pb-2.5 font-bold">Enrolled Courses</th>
-                      <th className="pb-2.5 font-bold">Quizzes Attempted</th>
+                      <th className="pb-2.5 font-bold text-center">Courses</th>
+                      <th className="pb-2.5 font-bold text-center">Quizzes Taken</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {students.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3 font-bold text-slate-900">{s.name}</td>
-                        <td className="py-3 text-slate-600 font-mono text-[11px]">{s.email}</td>
-                        <td className="py-3 font-mono text-slate-600 text-[11px]">{s.enrollmentNo || "N/A"}</td>
-                        <td className="py-3 text-slate-600">{s.department || "Computer Engineering"}</td>
-                        <td className="py-3 font-semibold text-blue-700">{s._count?.enrollments || 0}</td>
-                        <td className="py-3 font-semibold text-slate-700">{s._count?.quizAttempts || 0}</td>
+                  <tbody className="divide-y divide-outline-variant/20">
+                    {filteredStudents.map((s) => (
+                      <tr key={s.id} className="hover:bg-surface-container-low/70 transition-colors">
+                        <td className="py-3 font-bold text-on-surface">{s.name}</td>
+                        <td className="py-3 text-on-surface-variant font-mono text-[11px]">{s.email}</td>
+                        <td className="py-3 font-mono text-on-surface-variant text-[11px]">{s.enrollmentNo || "N/A"}</td>
+                        <td className="py-3 text-on-surface-variant">{s.department || "Computer Engineering"}</td>
+                        <td className="py-3 text-center">
+                          <span className="font-mono font-bold text-primary bg-surface-container px-2 py-0.5 rounded-full text-[11px]">
+                            {s._count?.enrollments || 0}
+                          </span>
+                        </td>
+                        <td className="py-3 text-center">
+                          <span className="font-mono font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full text-[11px]">
+                            {s._count?.quizAttempts || 0}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <EmptyState title="No Students" description="No students currently registered." />
+              <EmptyState title="No Students Found" description="No students match your query." />
             )}
           </div>
         )}

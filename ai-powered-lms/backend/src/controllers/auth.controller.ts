@@ -4,6 +4,8 @@ import {
   registerUser,
   loginUser,
   getUserProfile,
+  verifyStudentEmail,
+  resendVerification,
 } from "../services/auth.service.js";
 
 export async function register(
@@ -16,7 +18,7 @@ export async function register(
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: newUser.message,
       data: newUser,
     });
   } catch (error) {
@@ -73,4 +75,12 @@ export async function logout(_req: Request, res: Response): Promise<void> {
     success: true,
     message: "Logout successful",
   });
+}
+
+export async function verifyEmail(req: Request, res: Response, next: NextFunction) {
+  try { const result = await verifyStudentEmail(req.body?.token); res.json({ success: true, message: result.message, data: result }); } catch (error) { next(error); }
+}
+
+export async function resendEmail(req: Request, res: Response, next: NextFunction) {
+  try { const result = await resendVerification(req.body); res.status(202).json({ success: true, message: result.message, data: result }); } catch (error) { next(error); }
 }

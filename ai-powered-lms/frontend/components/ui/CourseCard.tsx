@@ -18,29 +18,29 @@ export default function CourseCard({
   const progress = course.progressPercentage !== undefined ? course.progressPercentage : 0;
 
   return (
-    <div className="card-interactive p-5 flex flex-col justify-between group">
+    <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-5 flex flex-col justify-between shadow-sm hover:border-outline-variant transition-all duration-200 group">
       <div>
         <div className="flex items-center justify-between mb-2.5">
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200/80 font-mono tracking-wider">
+          <span className="px-2 py-0.5 rounded font-label-sm text-[10px] font-bold bg-primary-fixed/80 text-primary border border-primary/20 tracking-wider">
             {course.code}
           </span>
-          <span className="text-[11px] font-medium text-slate-500 font-mono">
+          <span className="font-label-sm text-[11px] font-medium text-outline">
             {course.credits} Credits • Sem {course.semester}
           </span>
         </div>
 
-        <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-1 mb-1.5 font-sans">
+        <h3 className="font-headline-sm text-sm font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-1 mb-1.5">
           {course.title}
         </h3>
 
-        <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed">
+        <p className="font-body-sm text-xs text-on-surface-variant line-clamp-2 mb-4 leading-relaxed">
           {course.description}
         </p>
 
         {course.faculty && (
-          <div className="flex items-center space-x-2 text-xs text-slate-500 mb-4 pb-3 border-t border-slate-100 pt-2.5">
-            <span className="text-sm">👨‍🏫</span>
-            <span className="truncate font-medium text-[11px] text-slate-700">
+          <div className="flex items-center gap-2 text-xs text-on-surface-variant mb-4 pb-3 border-t border-surface-container-high pt-2.5">
+            <span className="material-symbols-outlined text-[16px] text-outline">person</span>
+            <span className="truncate font-medium text-[11px] text-on-surface">
               {course.faculty.name}
             </span>
           </div>
@@ -50,30 +50,30 @@ export default function CourseCard({
       <div className="pt-2">
         {showProgress && (
           <div className="mb-3.5">
-            <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1.5 font-mono">
+            <div className="flex justify-between font-label-sm text-[11px] font-semibold text-on-surface-variant mb-1.5">
               <span>Syllabus Progress</span>
-              <span className="text-blue-700 font-bold">{progress}%</span>
+              <span className="text-primary font-bold">{progress}%</span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
               <div
-                className="bg-blue-700 h-1.5 rounded-full transition-all duration-500 ease-out"
+                className="bg-primary-container h-1.5 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-          <span className="text-[11px] text-slate-500 font-medium">
+        <div className="flex items-center justify-between pt-2.5 border-t border-surface-container-high">
+          <span className="font-label-sm text-[11px] text-outline font-medium">
             {course._count ? `${course._count.materials || 0} Materials` : "Course Content"}
           </span>
 
           <Link
             href={`${baseHref}/${course.id}`}
-            className="btn-press text-xs font-semibold text-blue-700 hover:text-blue-900 flex items-center space-x-1 py-1 px-2 rounded hover:bg-blue-50/60 transition-colors"
+            className="font-body-sm text-xs font-semibold text-primary hover:underline flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-surface-container-low transition-colors"
           >
             <span>Access Course</span>
-            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
           </Link>
         </div>
       </div>

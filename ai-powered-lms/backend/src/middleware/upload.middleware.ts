@@ -27,6 +27,9 @@ const multerInstance = multer({
   limits: {
     fileSize: 25 * 1024 * 1024, // 25 MB max limit
     files: 1,
+    fields: 10,
+    fieldSize: 64 * 1024,
+    parts: 12,
   },
 });
 
@@ -56,6 +59,10 @@ export const uploadMaterialPdf = {
               success: false,
               message: "File exceeds maximum permitted size of 25 MB",
             });
+            return;
+          }
+          if (err.code === "LIMIT_PART_COUNT" || err.code === "LIMIT_FIELD_COUNT" || err.code === "LIMIT_FIELD_SIZE") {
+            res.status(413).json({ success: false, message: "Upload request contains too much form data" });
             return;
           }
           const statusCode = err.statusCode || 400;

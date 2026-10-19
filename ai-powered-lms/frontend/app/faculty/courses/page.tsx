@@ -7,8 +7,7 @@ import { apiRequest } from "@/lib/api";
 import { Course } from "@/lib/types";
 import Topbar from "@/components/layout/Topbar";
 import EmptyState from "@/components/ui/EmptyState";
-
-import SkeletonLoader, { CardSkeleton } from "@/components/ui/SkeletonLoader";
+import { CardSkeleton } from "@/components/ui/SkeletonLoader";
 
 export default function FacultyCoursesPage() {
   const { user } = useAuth();
@@ -25,7 +24,7 @@ export default function FacultyCoursesPage() {
   const [creating, setCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const loadCourses = async () => {
+  const loadCourses = React.useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
@@ -38,11 +37,12 @@ export default function FacultyCoursesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    loadCourses();
-  }, [user]);
+    const timer = window.setTimeout(() => void loadCourses(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadCourses]);
 
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,28 +66,29 @@ export default function FacultyCoursesPage() {
       setTitle("");
       setDescription("");
       loadCourses();
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to create course");
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "Failed to create course");
     } finally {
       setCreating(false);
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="Course Management" subtitle="Instructional Offerings & Syllabi" />
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <main className="flex-1 p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Your Instructional Courses</h2>
-            <p className="text-xs text-slate-500">Manage syllabus content, materials, assignments, and test banks</p>
+            <h2 className="text-base font-bold text-on-surface">Your Instructional Courses</h2>
+            <p className="text-xs text-on-surface-variant">Manage syllabus content, materials, assignments, and test banks</p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs rounded-lg shadow-xs transition-all cursor-pointer btn-press"
+            className="px-4 py-2.5 bg-primary hover:bg-primary-container text-on-primary font-semibold text-xs rounded-lg shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
           >
-            + Create New Course
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            <span>Create New Course</span>
           </button>
         </div>
 
@@ -100,30 +101,41 @@ export default function FacultyCoursesPage() {
             {courses.map((c) => (
               <div
                 key={c.id}
-                className="bg-white border border-slate-200 rounded-xl p-5.5 shadow-xs flex flex-col justify-between text-xs space-y-3.5 card-interactive"
+                className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5.5 shadow-xs flex flex-col justify-between text-xs space-y-4 hover:border-primary/40 hover:shadow-sm transition-all"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-900 font-bold border border-blue-200 text-[10px] tracking-wider uppercase font-mono">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="px-2.5 py-1 rounded-md bg-surface-container-high text-primary font-bold border border-outline-variant/40 text-[10px] tracking-wider uppercase font-mono">
                       {c.code}
                     </span>
-                    <span className="text-slate-500 font-medium text-[11px]">Sem {c.semester} • {c.credits} Credits</span>
+                    <span className="text-on-surface-variant font-medium text-[11px]">
+                      Sem {c.semester} • {c.credits} Credits
+                    </span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-snug">{c.title}</h3>
-                  <p className="text-slate-600 line-clamp-2 leading-relaxed text-[11px]">{c.description}</p>
+                  <h3 className="text-sm font-bold text-on-surface mb-1.5 leading-snug">{c.title}</h3>
+                  <p className="text-on-surface-variant line-clamp-2 leading-relaxed text-[11px]">
+                    {c.description}
+                  </p>
                 </div>
 
-                <div className="space-y-2.5 pt-3 border-t border-slate-100">
-                  <div className="flex items-center justify-between text-slate-500 text-[11px]">
-                    <span>👥 {c._count?.enrollments || 0} Students</span>
-                    <span>📄 {c._count?.materials || 0} Materials</span>
+                <div className="space-y-3 pt-3.5 border-t border-outline-variant/30">
+                  <div className="flex items-center justify-between text-on-surface-variant text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] text-outline">group</span>
+                      {c._count?.enrollments || 0} Students
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] text-outline">description</span>
+                      {c._count?.materials || 0} Materials
+                    </span>
                   </div>
                   <Link
                     href={`/faculty/courses/${c.id}`}
-                    className="block text-center w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg transition-all btn-press"
+                    className="flex items-center justify-center gap-1 w-full py-2 bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 text-on-surface font-semibold rounded-lg transition-all"
                   >
-                    Open Course Console →
+                    <span>Open Course Console</span>
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   </Link>
                 </div>
               </div>
@@ -140,37 +152,47 @@ export default function FacultyCoursesPage() {
 
         {/* Create Course Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl text-xs space-y-4">
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                <h3 className="text-base font-bold text-slate-900">Create New Academic Course</h3>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer p-1">
-                  ×
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl max-w-lg w-full p-6 shadow-xl text-xs space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between pb-3.5 border-b border-outline-variant/30">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]">add_circle</span>
+                  <h3 className="text-base font-bold text-on-surface">Create New Academic Course</h3>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-outline hover:text-on-surface font-bold text-xl cursor-pointer p-1"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
                 </button>
               </div>
 
               {errorMessage && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl font-medium animate-fade-in">
+                <div className="p-3 bg-error-container text-on-error-container rounded-xl font-medium">
                   {errorMessage}
                 </div>
               )}
 
-              <form onSubmit={handleCreateCourse} className="space-y-3.5">
+              <form onSubmit={handleCreateCourse} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Course Code</label>
+                    <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                      Course Code
+                    </label>
                     <input
                       type="text"
                       required
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
                       placeholder="e.g. CS-405"
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs font-mono uppercase transition-colors"
+                      className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary font-mono uppercase transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Credits</label>
+                    <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                      Credits
+                    </label>
                     <input
                       type="number"
                       required
@@ -178,47 +200,71 @@ export default function FacultyCoursesPage() {
                       max={6}
                       value={credits}
                       onChange={(e) => setCredits(Number(e.target.value))}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                      className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Course Title</label>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Target Semester
+                  </label>
+                  <select
+                    value={semester}
+                    onChange={(e) => setSemester(Number(e.target.value))}
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary font-medium transition-colors"
+                  >
+                    <option value={1}>Semester I</option>
+                    <option value={2}>Semester II</option>
+                    <option value={3}>Semester III</option>
+                    <option value={4}>Semester IV</option>
+                    <option value={5}>Semester V</option>
+                    <option value={6}>Semester VI</option>
+                    <option value={7}>Semester VII</option>
+                    <option value={8}>Semester VIII</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Course Title
+                  </label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Compiler Design & Optimization"
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Description / Syllabus Overview</label>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Description / Syllabus Overview
+                  </label>
                   <textarea
                     rows={3}
                     required
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Course objectives, prerequisites, and syllabus scope..."
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
 
-                <div className="pt-3.5 border-t border-slate-100 flex justify-end space-x-2.5">
+                <div className="pt-3.5 border-t border-outline-variant/30 flex justify-end space-x-2.5">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container font-semibold cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-semibold rounded-lg shadow-xs cursor-pointer transition-all btn-press"
+                    className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary font-semibold rounded-lg shadow-xs cursor-pointer transition-all disabled:opacity-50"
                   >
                     {creating ? "Creating..." : "Save & Register Course"}
                   </button>

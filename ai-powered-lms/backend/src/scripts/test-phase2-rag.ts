@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import fs from "fs";
 import path from "path";
 import prisma from "../lib/prisma.js";
@@ -247,6 +248,7 @@ startxref
     headers: {
       Authorization: `Bearer ${studentToken}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": randomUUID(),
     },
     body: JSON.stringify({
       content: "Explain how randomized election timeouts prevent split votes in Raft.",
@@ -278,7 +280,7 @@ startxref
   // --- TEST 12: Existing Auth & RBAC Unaffected ---
   const unauthChatRes = await fetch(`${BASE_URL}/ai/conversations/${conversationId}/messages`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Idempotency-Key": randomUUID() },
     body: JSON.stringify({ content: "Test" }),
   });
   console.log(

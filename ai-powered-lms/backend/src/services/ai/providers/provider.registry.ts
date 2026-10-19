@@ -1,5 +1,6 @@
 import { LLMProvider } from "./llm-provider.interface.js";
 import { geminiProvider } from "../gemini.provider.js";
+import { groqProvider } from "../groq.provider.js";
 
 /**
  * Provider Registry for AURA LMS Generation Layer.
@@ -14,6 +15,11 @@ class ProviderRegistry {
     this.defaultProviderId = process.env.DEFAULT_LLM_PROVIDER || "gemini";
     // Register default Gemini provider
     this.registerProvider(geminiProvider);
+    // Groq is optional and opt-in. Its absence must not affect the Gemini
+    // baseline or the Gemini-backed embedding pipeline.
+    if (process.env.GROQ_API_KEY) {
+      this.registerProvider(groqProvider);
+    }
   }
 
   public registerProvider(provider: LLMProvider): void {
@@ -24,14 +30,22 @@ class ProviderRegistry {
     this.defaultProviderId = providerId;
   }
 
+  public getDefaultProviderId(): string {
+    return this.defaultProviderId;
+  }
+
   public getProvider(providerId?: string): LLMProvider {
     const id = (providerId || this.defaultProviderId).toLowerCase();
     const provider = this.providers.get(id);
 
     if (!provider) {
-      // Fall back to Gemini provider
+      // Keep Gemini as the safe baseline, but make an invalid or unavailable
+      // provider selection visible instead of silently changing providers.
       const fallback = this.providers.get("gemini");
-      if (fallback) return fallback;
+      if (fallback) {
+        console.warn(`[AI PROVIDER CONFIG] '${id}' is unavailable; using Gemini baseline.`);
+        return fallback;
+      }
       throw new Error(`LLM Provider '${id}' not found in registry and no fallback available.`);
     }
 

@@ -9,6 +9,35 @@
 * 🟢 You can import this file directly.
 */
 
+export const AccountStatus = {
+  ACTIVE: 'ACTIVE',
+  PENDING_EMAIL: 'PENDING_EMAIL',
+  PENDING_FACULTY_APPROVAL: 'PENDING_FACULTY_APPROVAL',
+  REJECTED: 'REJECTED',
+  DISABLED: 'DISABLED'
+} as const
+
+export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus]
+
+
+export const FacultyApplicationStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type FacultyApplicationStatus = (typeof FacultyApplicationStatus)[keyof typeof FacultyApplicationStatus]
+
+
+export const AIMessageRequestStatus = {
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type AIMessageRequestStatus = (typeof AIMessageRequestStatus)[keyof typeof AIMessageRequestStatus]
+
+
 export const Role = {
   STUDENT: 'STUDENT',
   FACULTY: 'FACULTY',

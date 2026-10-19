@@ -193,6 +193,7 @@ export type AIConversationWhereInput = {
   course?: Prisma.XOR<Prisma.CourseNullableScalarRelationFilter, Prisma.CourseWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   messages?: Prisma.AIMessageListRelationFilter
+  messageRequests?: Prisma.AIMessageRequestListRelationFilter
 }
 
 export type AIConversationOrderByWithRelationInput = {
@@ -205,6 +206,7 @@ export type AIConversationOrderByWithRelationInput = {
   course?: Prisma.CourseOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
   messages?: Prisma.AIMessageOrderByRelationAggregateInput
+  messageRequests?: Prisma.AIMessageRequestOrderByRelationAggregateInput
 }
 
 export type AIConversationWhereUniqueInput = Prisma.AtLeast<{
@@ -220,6 +222,7 @@ export type AIConversationWhereUniqueInput = Prisma.AtLeast<{
   course?: Prisma.XOR<Prisma.CourseNullableScalarRelationFilter, Prisma.CourseWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   messages?: Prisma.AIMessageListRelationFilter
+  messageRequests?: Prisma.AIMessageRequestListRelationFilter
 }, "id">
 
 export type AIConversationOrderByWithAggregationInput = {
@@ -254,6 +257,7 @@ export type AIConversationCreateInput = {
   course?: Prisma.CourseCreateNestedOneWithoutAiConversationsInput
   user: Prisma.UserCreateNestedOneWithoutAiConversationsInput
   messages?: Prisma.AIMessageCreateNestedManyWithoutConversationInput
+  messageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationUncheckedCreateInput = {
@@ -264,6 +268,7 @@ export type AIConversationUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.AIMessageUncheckedCreateNestedManyWithoutConversationInput
+  messageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationUpdateInput = {
@@ -274,6 +279,7 @@ export type AIConversationUpdateInput = {
   course?: Prisma.CourseUpdateOneWithoutAiConversationsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutAiConversationsNestedInput
   messages?: Prisma.AIMessageUpdateManyWithoutConversationNestedInput
+  messageRequests?: Prisma.AIMessageRequestUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationUncheckedUpdateInput = {
@@ -284,6 +290,7 @@ export type AIConversationUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.AIMessageUncheckedUpdateManyWithoutConversationNestedInput
+  messageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationCreateManyInput = {
@@ -451,6 +458,20 @@ export type AIConversationUpdateOneRequiredWithoutMessagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AIConversationUpdateToOneWithWhereWithoutMessagesInput, Prisma.AIConversationUpdateWithoutMessagesInput>, Prisma.AIConversationUncheckedUpdateWithoutMessagesInput>
 }
 
+export type AIConversationCreateNestedOneWithoutMessageRequestsInput = {
+  create?: Prisma.XOR<Prisma.AIConversationCreateWithoutMessageRequestsInput, Prisma.AIConversationUncheckedCreateWithoutMessageRequestsInput>
+  connectOrCreate?: Prisma.AIConversationCreateOrConnectWithoutMessageRequestsInput
+  connect?: Prisma.AIConversationWhereUniqueInput
+}
+
+export type AIConversationUpdateOneRequiredWithoutMessageRequestsNestedInput = {
+  create?: Prisma.XOR<Prisma.AIConversationCreateWithoutMessageRequestsInput, Prisma.AIConversationUncheckedCreateWithoutMessageRequestsInput>
+  connectOrCreate?: Prisma.AIConversationCreateOrConnectWithoutMessageRequestsInput
+  upsert?: Prisma.AIConversationUpsertWithoutMessageRequestsInput
+  connect?: Prisma.AIConversationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AIConversationUpdateToOneWithWhereWithoutMessageRequestsInput, Prisma.AIConversationUpdateWithoutMessageRequestsInput>, Prisma.AIConversationUncheckedUpdateWithoutMessageRequestsInput>
+}
+
 export type AIConversationCreateWithoutUserInput = {
   id?: string
   title?: string
@@ -458,6 +479,7 @@ export type AIConversationCreateWithoutUserInput = {
   updatedAt?: Date | string
   course?: Prisma.CourseCreateNestedOneWithoutAiConversationsInput
   messages?: Prisma.AIMessageCreateNestedManyWithoutConversationInput
+  messageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationUncheckedCreateWithoutUserInput = {
@@ -467,6 +489,7 @@ export type AIConversationUncheckedCreateWithoutUserInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.AIMessageUncheckedCreateNestedManyWithoutConversationInput
+  messageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationCreateOrConnectWithoutUserInput = {
@@ -514,6 +537,7 @@ export type AIConversationCreateWithoutCourseInput = {
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutAiConversationsInput
   messages?: Prisma.AIMessageCreateNestedManyWithoutConversationInput
+  messageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationUncheckedCreateWithoutCourseInput = {
@@ -523,6 +547,7 @@ export type AIConversationUncheckedCreateWithoutCourseInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.AIMessageUncheckedCreateNestedManyWithoutConversationInput
+  messageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationCreateOrConnectWithoutCourseInput = {
@@ -558,6 +583,7 @@ export type AIConversationCreateWithoutMessagesInput = {
   updatedAt?: Date | string
   course?: Prisma.CourseCreateNestedOneWithoutAiConversationsInput
   user: Prisma.UserCreateNestedOneWithoutAiConversationsInput
+  messageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationUncheckedCreateWithoutMessagesInput = {
@@ -567,6 +593,7 @@ export type AIConversationUncheckedCreateWithoutMessagesInput = {
   title?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  messageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutConversationInput
 }
 
 export type AIConversationCreateOrConnectWithoutMessagesInput = {
@@ -592,6 +619,7 @@ export type AIConversationUpdateWithoutMessagesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   course?: Prisma.CourseUpdateOneWithoutAiConversationsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutAiConversationsNestedInput
+  messageRequests?: Prisma.AIMessageRequestUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationUncheckedUpdateWithoutMessagesInput = {
@@ -601,6 +629,63 @@ export type AIConversationUncheckedUpdateWithoutMessagesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutConversationNestedInput
+}
+
+export type AIConversationCreateWithoutMessageRequestsInput = {
+  id?: string
+  title?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  course?: Prisma.CourseCreateNestedOneWithoutAiConversationsInput
+  user: Prisma.UserCreateNestedOneWithoutAiConversationsInput
+  messages?: Prisma.AIMessageCreateNestedManyWithoutConversationInput
+}
+
+export type AIConversationUncheckedCreateWithoutMessageRequestsInput = {
+  id?: string
+  userId: string
+  courseId?: string | null
+  title?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  messages?: Prisma.AIMessageUncheckedCreateNestedManyWithoutConversationInput
+}
+
+export type AIConversationCreateOrConnectWithoutMessageRequestsInput = {
+  where: Prisma.AIConversationWhereUniqueInput
+  create: Prisma.XOR<Prisma.AIConversationCreateWithoutMessageRequestsInput, Prisma.AIConversationUncheckedCreateWithoutMessageRequestsInput>
+}
+
+export type AIConversationUpsertWithoutMessageRequestsInput = {
+  update: Prisma.XOR<Prisma.AIConversationUpdateWithoutMessageRequestsInput, Prisma.AIConversationUncheckedUpdateWithoutMessageRequestsInput>
+  create: Prisma.XOR<Prisma.AIConversationCreateWithoutMessageRequestsInput, Prisma.AIConversationUncheckedCreateWithoutMessageRequestsInput>
+  where?: Prisma.AIConversationWhereInput
+}
+
+export type AIConversationUpdateToOneWithWhereWithoutMessageRequestsInput = {
+  where?: Prisma.AIConversationWhereInput
+  data: Prisma.XOR<Prisma.AIConversationUpdateWithoutMessageRequestsInput, Prisma.AIConversationUncheckedUpdateWithoutMessageRequestsInput>
+}
+
+export type AIConversationUpdateWithoutMessageRequestsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  course?: Prisma.CourseUpdateOneWithoutAiConversationsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutAiConversationsNestedInput
+  messages?: Prisma.AIMessageUpdateManyWithoutConversationNestedInput
+}
+
+export type AIConversationUncheckedUpdateWithoutMessageRequestsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  courseId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  messages?: Prisma.AIMessageUncheckedUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationCreateManyUserInput = {
@@ -618,6 +703,7 @@ export type AIConversationUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   course?: Prisma.CourseUpdateOneWithoutAiConversationsNestedInput
   messages?: Prisma.AIMessageUpdateManyWithoutConversationNestedInput
+  messageRequests?: Prisma.AIMessageRequestUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationUncheckedUpdateWithoutUserInput = {
@@ -627,6 +713,7 @@ export type AIConversationUncheckedUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.AIMessageUncheckedUpdateManyWithoutConversationNestedInput
+  messageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationUncheckedUpdateManyWithoutUserInput = {
@@ -652,6 +739,7 @@ export type AIConversationUpdateWithoutCourseInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutAiConversationsNestedInput
   messages?: Prisma.AIMessageUpdateManyWithoutConversationNestedInput
+  messageRequests?: Prisma.AIMessageRequestUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationUncheckedUpdateWithoutCourseInput = {
@@ -661,6 +749,7 @@ export type AIConversationUncheckedUpdateWithoutCourseInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.AIMessageUncheckedUpdateManyWithoutConversationNestedInput
+  messageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutConversationNestedInput
 }
 
 export type AIConversationUncheckedUpdateManyWithoutCourseInput = {
@@ -678,10 +767,12 @@ export type AIConversationUncheckedUpdateManyWithoutCourseInput = {
 
 export type AIConversationCountOutputType = {
   messages: number
+  messageRequests: number
 }
 
 export type AIConversationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   messages?: boolean | AIConversationCountOutputTypeCountMessagesArgs
+  messageRequests?: boolean | AIConversationCountOutputTypeCountMessageRequestsArgs
 }
 
 /**
@@ -701,6 +792,13 @@ export type AIConversationCountOutputTypeCountMessagesArgs<ExtArgs extends runti
   where?: Prisma.AIMessageWhereInput
 }
 
+/**
+ * AIConversationCountOutputType without action
+ */
+export type AIConversationCountOutputTypeCountMessageRequestsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AIMessageRequestWhereInput
+}
+
 
 export type AIConversationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -712,6 +810,7 @@ export type AIConversationSelect<ExtArgs extends runtime.Types.Extensions.Intern
   course?: boolean | Prisma.AIConversation$courseArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   messages?: boolean | Prisma.AIConversation$messagesArgs<ExtArgs>
+  messageRequests?: boolean | Prisma.AIConversation$messageRequestsArgs<ExtArgs>
   _count?: boolean | Prisma.AIConversationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aIConversation"]>
 
@@ -751,6 +850,7 @@ export type AIConversationInclude<ExtArgs extends runtime.Types.Extensions.Inter
   course?: boolean | Prisma.AIConversation$courseArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   messages?: boolean | Prisma.AIConversation$messagesArgs<ExtArgs>
+  messageRequests?: boolean | Prisma.AIConversation$messageRequestsArgs<ExtArgs>
   _count?: boolean | Prisma.AIConversationCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AIConversationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -768,6 +868,7 @@ export type $AIConversationPayload<ExtArgs extends runtime.Types.Extensions.Inte
     course: Prisma.$CoursePayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs>
     messages: Prisma.$AIMessagePayload<ExtArgs>[]
+    messageRequests: Prisma.$AIMessageRequestPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1173,6 +1274,7 @@ export interface Prisma__AIConversationClient<T, Null = never, ExtArgs extends r
   course<T extends Prisma.AIConversation$courseArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AIConversation$courseArgs<ExtArgs>>): Prisma.Prisma__CourseClient<runtime.Types.Result.GetResult<Prisma.$CoursePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   messages<T extends Prisma.AIConversation$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AIConversation$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AIMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  messageRequests<T extends Prisma.AIConversation$messageRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AIConversation$messageRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AIMessageRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1649,6 +1751,30 @@ export type AIConversation$messagesArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.AIMessageScalarFieldEnum | Prisma.AIMessageScalarFieldEnum[]
+}
+
+/**
+ * AIConversation.messageRequests
+ */
+export type AIConversation$messageRequestsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AIMessageRequest
+   */
+  select?: Prisma.AIMessageRequestSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AIMessageRequest
+   */
+  omit?: Prisma.AIMessageRequestOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AIMessageRequestInclude<ExtArgs> | null
+  where?: Prisma.AIMessageRequestWhereInput
+  orderBy?: Prisma.AIMessageRequestOrderByWithRelationInput | Prisma.AIMessageRequestOrderByWithRelationInput[]
+  cursor?: Prisma.AIMessageRequestWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AIMessageRequestScalarFieldEnum | Prisma.AIMessageRequestScalarFieldEnum[]
 }
 
 /**

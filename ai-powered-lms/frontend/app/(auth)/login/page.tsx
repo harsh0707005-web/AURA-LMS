@@ -3,9 +3,14 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserRole } from "@/lib/types";
+import { User, UserRole } from "@/lib/types";
 import { useAuth } from "@/lib/AuthContext";
 import { apiRequest } from "@/lib/api";
+
+interface LoginResponsePayload {
+  token: string;
+  user: User;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +18,7 @@ export default function LoginPage() {
   const [role, setRole] = useState<UserRole>("STUDENT");
   const [email, setEmail] = useState("harsh.ce@college.edu");
   const [password, setPassword] = useState("Password123");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -31,7 +37,7 @@ export default function LoginPage() {
     setErrorMessage("");
 
     try {
-      const res = await apiRequest<{ token: string; user: any }>("/auth/login", {
+      const res = await apiRequest<LoginResponsePayload>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
@@ -44,101 +50,109 @@ export default function LoginPage() {
         else if (targetRole === "FACULTY") router.push("/faculty/dashboard");
         else router.push("/admin/dashboard");
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || "Invalid credentials or authentication server unreachable");
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "Invalid credentials or authentication server unreachable");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl w-full bg-white border border-slate-200 rounded-xl shadow-xs grid md:grid-cols-2 overflow-hidden">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4 sm:p-6 lg:p-8 text-on-surface">
+      <div className="max-w-4xl w-full bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shadow-xl grid md:grid-cols-2 overflow-hidden animate-fade-in">
         {/* Left Column: Academic / Institutional Context */}
-        <div className="bg-slate-900 text-white p-8 flex flex-col justify-between">
+        <div className="bg-inverse-surface text-inverse-on-surface p-8 sm:p-10 flex flex-col justify-between">
           <div>
-            <Link href="/" className="inline-flex items-center space-x-2.5 mb-8">
-              <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                A
+            <Link href="/" className="inline-flex items-center space-x-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center text-on-primary shadow-sm">
+                <span className="material-symbols-outlined text-[22px]">auto_awesome</span>
               </div>
-              <span className="text-xl font-bold tracking-tight">AURA LMS</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-lg tracking-tight leading-none text-white">AURA LMS</span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-outline-variant leading-tight mt-0.5">
+                  Academic Precision
+                </span>
+              </div>
             </Link>
 
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold leading-snug">
+            <div className="space-y-3.5">
+              <h2 className="text-xl sm:text-2xl font-bold leading-snug tracking-tight text-white">
                 University Academic Portal & Resource System
               </h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-outline-variant leading-relaxed">
                 Integrated course workspace with diagnostic weak-topic tracking, syllabus-grounded AI tutoring, and learning analytics.
               </p>
             </div>
 
-            <div className="mt-8 space-y-2.5 text-xs text-slate-300">
+            <div className="mt-8 space-y-2.5 text-xs text-outline-variant">
               <div className="flex items-center space-x-2">
-                <span className="text-blue-400">✓</span>
+                <span className="material-symbols-outlined text-secondary text-[16px]">check_circle</span>
                 <span>Department of Computer Engineering</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-blue-400">✓</span>
-                <span>Academic Session 2026</span>
+                <span className="material-symbols-outlined text-secondary text-[16px]">check_circle</span>
+                <span>Course-Scoped RAG Vector Embeddings</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-blue-400">✓</span>
+                <span className="material-symbols-outlined text-secondary text-[16px]">check_circle</span>
                 <span>PostgreSQL Relational Storage Architecture</span>
               </div>
             </div>
           </div>
 
           {/* Quick Demo Credentials Info */}
-          <div className="mt-8 pt-4 border-t border-slate-800 text-[11px] text-slate-400">
-            <div className="font-semibold text-slate-300 mb-1">Demo Institutional Accounts:</div>
-            <div>Student: <code className="text-blue-300">harsh.ce@college.edu</code></div>
-            <div>Faculty: <code className="text-blue-300">dr.rajesh@college.edu</code></div>
-            <div>Admin: <code className="text-blue-300">admin.ce@college.edu</code></div>
-            <div className="mt-1 text-[10px] text-slate-500">Password: Password123</div>
+          <div className="mt-8 pt-5 border-t border-outline/30 text-[11px] text-outline-variant space-y-1">
+            <div className="font-semibold text-white mb-1.5 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px]">key</span>
+              <span>Demo Institutional Accounts:</span>
+            </div>
+            <div>Student: <code className="text-primary-container font-mono bg-inverse-surface px-1.5 py-0.5 rounded">harsh.ce@college.edu</code></div>
+            <div>Faculty: <code className="text-primary-container font-mono bg-inverse-surface px-1.5 py-0.5 rounded">dr.rajesh@college.edu</code></div>
+            <div>Admin: <code className="text-primary-container font-mono bg-inverse-surface px-1.5 py-0.5 rounded">admin.ce@college.edu</code></div>
+            <div className="mt-1.5 text-[10px] text-outline font-mono">Password: Password123</div>
           </div>
         </div>
 
         {/* Right Column: Clean Login Form */}
-        <div className="p-8 sm:p-10 flex flex-col justify-center animate-slide-up">
+        <div className="p-8 sm:p-10 flex flex-col justify-center">
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-slate-900 font-sans tracking-tight">Sign in to your account</h3>
-            <p className="text-xs text-slate-500 mt-1">Select your role to access your academic workspace</p>
+            <h3 className="text-xl font-bold text-on-surface tracking-tight">Sign in to your account</h3>
+            <p className="text-xs text-on-surface-variant mt-1">Select your role to access your academic workspace</p>
           </div>
 
           {/* Role Tabs */}
-          <div className="bg-slate-100/80 border border-slate-200/60 p-1 rounded-lg grid grid-cols-3 gap-1 mb-5">
+          <div className="bg-surface-container-low border border-outline-variant/40 p-1 rounded-xl grid grid-cols-3 gap-1 mb-5">
             {[
-              { key: "STUDENT", label: "Student", icon: "🎓" },
-              { key: "FACULTY", label: "Faculty", icon: "👨‍🏫" },
-              { key: "ADMIN", label: "Admin", icon: "🛡️" },
+              { key: "STUDENT", label: "Student", icon: "school" },
+              { key: "FACULTY", label: "Faculty", icon: "badge" },
+              { key: "ADMIN", label: "Admin", icon: "admin_panel_settings" },
             ].map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => handleRoleChange(item.key as UserRole)}
-                className={`py-2 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center space-x-1.5 ${
+                className={`py-2 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer flex items-center justify-center space-x-1.5 ${
                   role === item.key
-                    ? "bg-white text-blue-900 shadow-2xs border border-slate-200/60"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                    ? "bg-surface-container-lowest text-primary shadow-xs font-bold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
                 }`}
               >
-                <span className="text-xs">{item.icon}</span>
+                <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
                 <span>{item.label}</span>
               </button>
             ))}
           </div>
 
           {errorMessage && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-md animate-fade-in flex items-start space-x-2">
-              <span className="shrink-0 font-bold">⚠️</span>
+            <div className="mb-4 p-3 bg-error-container text-on-error-container text-xs rounded-xl flex items-center space-x-2 font-medium">
+              <span className="material-symbols-outlined text-[18px]">error</span>
               <span>{errorMessage}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1.5 font-mono text-[11px] uppercase tracking-wider">
+              <label className="block font-semibold text-on-surface mb-1.5 font-mono text-[11px] uppercase tracking-wider">
                 {role === "STUDENT" ? "Institutional Email" : "Staff / Faculty Email"}
               </label>
               <input
@@ -147,43 +161,51 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your.name@college.edu"
-                className="w-full bg-white border border-slate-300 text-slate-900 rounded-md p-2.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 font-medium transition-all"
+                className="w-full bg-surface-container-low border border-outline-variant/50 text-on-surface rounded-lg p-2.5 focus:outline-none focus:border-primary font-medium transition-colors"
               />
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="font-semibold text-slate-700 font-mono text-[11px] uppercase tracking-wider">Password</label>
-                <span className="text-[10px] text-slate-500 font-mono">Default: Password123</span>
+                <label className="font-semibold text-on-surface font-mono text-[11px] uppercase tracking-wider">Password</label>
+                <span className="text-[10px] text-on-surface-variant font-mono">Default: Password123</span>
               </div>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-white border border-slate-300 text-slate-900 rounded-md p-2.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full bg-surface-container-low border border-outline-variant/50 text-on-surface rounded-lg p-2.5 pr-10 focus:outline-none focus:border-primary font-medium transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
+                </button>
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="btn-press w-full bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400 text-white font-semibold py-2.5 rounded-md text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center space-x-2"
+              className="w-full py-2.5 bg-primary hover:bg-primary-container text-on-primary font-semibold rounded-lg shadow-xs transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50 mt-2"
             >
               {loading && (
-                <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
+                <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               )}
-              <span>{loading ? "Authenticating..." : `Sign In as ${role.toLowerCase()} →`}</span>
+              <span>{loading ? "Authenticating..." : `Sign in as ${role === "STUDENT" ? "Student" : role === "FACULTY" ? "Faculty" : "Administrator"}`}</span>
             </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
-            Need an academic account?{" "}
-            <Link href="/register" className="font-semibold text-blue-700 hover:text-blue-900 hover:underline">
+          <div className="mt-6 text-center text-xs text-on-surface-variant">
+            <span>Don&apos;t have an institutional account? </span>
+            <Link href="/register" className="font-semibold text-primary hover:text-primary-container transition-colors">
               Register here
             </Link>
           </div>

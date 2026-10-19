@@ -52,6 +52,9 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  StudentRegistry: 'StudentRegistry',
+  FacultyApplication: 'FacultyApplication',
+  EmailVerificationToken: 'EmailVerificationToken',
   Course: 'Course',
   Enrollment: 'Enrollment',
   Material: 'Material',
@@ -64,6 +67,7 @@ export const ModelName = {
   Answer: 'Answer',
   AIConversation: 'AIConversation',
   AIMessage: 'AIMessage',
+  AIMessageRequest: 'AIMessageRequest',
   Document: 'Document',
   Performance: 'Performance',
   Recommendation: 'Recommendation',
@@ -94,6 +98,8 @@ export const UserScalarFieldEnum = {
   department: 'department',
   enrollmentNo: 'enrollmentNo',
   role: 'role',
+  status: 'status',
+  studentRegistryId: 'studentRegistryId',
   updatedAt: 'updatedAt',
   avatarUrl: 'avatarUrl',
   employeeId: 'employeeId',
@@ -101,6 +107,48 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const StudentRegistryScalarFieldEnum = {
+  id: 'id',
+  enrollmentNo: 'enrollmentNo',
+  email: 'email',
+  active: 'active',
+  claimed: 'claimed',
+  claimedAt: 'claimedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StudentRegistryScalarFieldEnum = (typeof StudentRegistryScalarFieldEnum)[keyof typeof StudentRegistryScalarFieldEnum]
+
+
+export const FacultyApplicationScalarFieldEnum = {
+  id: 'id',
+  employeeId: 'employeeId',
+  email: 'email',
+  applicantId: 'applicantId',
+  status: 'status',
+  reviewerId: 'reviewerId',
+  reviewedAt: 'reviewedAt',
+  note: 'note',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FacultyApplicationScalarFieldEnum = (typeof FacultyApplicationScalarFieldEnum)[keyof typeof FacultyApplicationScalarFieldEnum]
+
+
+export const EmailVerificationTokenScalarFieldEnum = {
+  id: 'id',
+  tokenHash: 'tokenHash',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  usedAt: 'usedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type EmailVerificationTokenScalarFieldEnum = (typeof EmailVerificationTokenScalarFieldEnum)[keyof typeof EmailVerificationTokenScalarFieldEnum]
 
 
 export const CourseScalarFieldEnum = {
@@ -276,6 +324,28 @@ export const AIMessageScalarFieldEnum = {
 } as const
 
 export type AIMessageScalarFieldEnum = (typeof AIMessageScalarFieldEnum)[keyof typeof AIMessageScalarFieldEnum]
+
+
+export const AIMessageRequestScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  conversationId: 'conversationId',
+  idempotencyKey: 'idempotencyKey',
+  payloadHash: 'payloadHash',
+  status: 'status',
+  deadlineAt: 'deadlineAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  failedAt: 'failedAt',
+  errorCode: 'errorCode',
+  errorMessage: 'errorMessage',
+  userMessageId: 'userMessageId',
+  assistantMessageId: 'assistantMessageId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AIMessageRequestScalarFieldEnum = (typeof AIMessageRequestScalarFieldEnum)[keyof typeof AIMessageRequestScalarFieldEnum]
 
 
 export const DocumentScalarFieldEnum = {

@@ -8,12 +8,18 @@ export class EmbeddingService {
    */
   public async embedText(text: string): Promise<number[]> {
     const vector = await geminiProvider.embedText(text);
-    if (vector.length !== EmbeddingService.EXPECTED_DIMENSION) {
-      console.warn(
-        `[EmbeddingService] Dimension mismatch: expected ${EmbeddingService.EXPECTED_DIMENSION}, got ${vector.length}`
-      );
-    }
+    this.validateDimension(vector);
     return vector;
+  }
+
+  private validateDimension(vector: number[]): void {
+    if (vector.length !== EmbeddingService.EXPECTED_DIMENSION) {
+      throw Object.assign(new Error("Embedding vector has an invalid dimension"), {
+        statusCode: 502,
+        code: "EMBEDDING_DIMENSION_MISMATCH",
+        details: { expected: EmbeddingService.EXPECTED_DIMENSION, actual: vector.length },
+      });
+    }
   }
 
   /**
@@ -33,6 +39,7 @@ export class EmbeddingService {
    * Formats a numeric JavaScript array into a pgvector-compatible literal string "[v1,v2,...,vn]".
    */
   public toVectorLiteral(vector: number[]): string {
+    this.validateDimension(vector);
     return `[${vector.join(",")}]`;
   }
 }

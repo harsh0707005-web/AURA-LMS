@@ -14,6 +14,9 @@ out/
 dist/
 build/
 
+# Runtime-uploaded course files (keep outside Git)
+backend/uploads/
+
 # Logs
 *.log
 npm-debug.log*

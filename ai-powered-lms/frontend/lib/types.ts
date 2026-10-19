@@ -1,10 +1,34 @@
 export type UserRole = "STUDENT" | "FACULTY" | "ADMIN";
+export type AccountStatus = "ACTIVE" | "PENDING_EMAIL" | "PENDING_FACULTY_APPROVAL" | "REJECTED" | "DISABLED";
+
+export type FacultyApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface FacultyApplication {
+  id: string;
+  employeeId: string;
+  email: string;
+  applicantId: string;
+  status: FacultyApplicationStatus;
+  reviewerId?: string | null;
+  reviewedAt?: string | null;
+  note?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  applicant: {
+    id: string;
+    name: string;
+    email: string;
+    department?: string | null;
+    status: string;
+  };
+}
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  status?: AccountStatus;
   avatarUrl?: string | null;
   department?: string | null;
   enrollmentNo?: string | null;
@@ -30,7 +54,7 @@ export interface Course {
     department?: string;
     avatarUrl?: string | null;
   };
-  enrollments?: any[];
+  enrollments?: { id: string; studentId: string; courseId: string }[];
   materials?: Material[];
   assignments?: Assignment[];
   quizzes?: Quiz[];
@@ -211,6 +235,9 @@ export interface AIMessage {
   sender: "user" | "assistant";
   content: string;
   createdAt?: string;
+  clientMessageId?: string;
+  idempotencyKey?: string;
+  deliveryStatus?: AIMessageDeliveryStatus;
   sources?: {
     documentName: string;
     page: number | null;
@@ -221,6 +248,61 @@ export interface AIMessage {
     chunkId?: string;
   }[];
   suggestedFollowUps?: string[];
+}
+
+export type AIMessageDeliveryStatus = "processing" | "retrying" | "completed" | "failed";
+
+export interface AITutorTiming {
+  embeddingMs: number;
+  vectorSearchMs: number;
+  retrievalMs: number;
+  rawCandidateCount: number;
+  acceptedCandidateCount: number;
+  minSimilarity: number;
+  retrievalStatus: string;
+  contextAssemblyMs: number;
+  generationMs: number;
+  totalRoundTripMs: number;
+  serverTotalMs?: number;
+  personalizationAvailable?: boolean;
+  personalizationIncluded?: boolean;
+  thinkingBudgetUsed?: number;
+  promptChars?: number;
+  outputChars?: number;
+  providerAttemptCount?: number;
+  fallbackUsed?: boolean;
+  retryCount?: number;
+  backoffMs?: number;
+}
+
+export interface AITutorResponse {
+  userMessage: AIMessage;
+  assistantMessage: AIMessage;
+  clientMessageId?: string;
+  idempotencyKey?: string;
+  timing?: AITutorTiming;
+  modelUsed?: string;
+  modelRequested?: string;
+  providerUsed?: string;
+  providerAttempts?: Array<{
+    model: string;
+    attempt: number;
+    outcome: "success" | "error";
+    durationMs: number;
+    status?: number;
+    code?: string;
+    error?: string;
+  }>;
+}
+
+export interface AITutorMessageStatusResponse {
+  status: AIMessageDeliveryStatus;
+  clientMessageId?: string;
+  idempotencyKey?: string;
+  userMessage?: AIMessage;
+  assistantMessage?: AIMessage;
+  error?: string;
+  message?: string;
 }
 
 export interface AIConversation {

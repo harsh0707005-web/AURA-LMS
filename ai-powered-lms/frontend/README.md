@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Connect the frontend to the backend
+
+The frontend reads `NEXT_PUBLIC_API_URL` to choose the API server. Copy the safe
+template and create a local-only environment file:
+
+```bash
+copy .env.example .env.local
+```
+
+For the default local backend, `.env.local` should contain:
+
+```dotenv
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+```
+
+Start the backend on port 5000 before using authenticated pages or uploads. If
+the backend runs elsewhere, replace the value with its API base URL, then
+restart `npm run dev` so Next.js reloads the public environment variable. Do
+not commit `.env.local` or put secrets in a `NEXT_PUBLIC_*` variable.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/api";
-import { User, UserRole } from "@/lib/types";
+import { User } from "@/lib/types";
 import Topbar from "@/components/layout/Topbar";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
-
-import SkeletonLoader, { TableSkeleton } from "@/components/ui/SkeletonLoader";
+import { TableSkeleton } from "@/components/ui/SkeletonLoader";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -23,7 +22,7 @@ export default function AdminUsersPage() {
   const [editEmployeeId, setEditEmployeeId] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const loadUsers = async () => {
+  const loadUsers = React.useCallback(async () => {
     try {
       setLoading(true);
       const res = await apiRequest<User[]>("/users");
@@ -35,11 +34,12 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    const timer = window.setTimeout(() => void loadUsers(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadUsers]);
 
   const handleOpenEdit = (user: User) => {
     setEditingUser(user);
@@ -67,20 +67,20 @@ export default function AdminUsersPage() {
 
       setEditingUser(null);
       loadUsers();
-    } catch (err: any) {
-      alert(err.message || "Failed to update user");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to update user");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    if (!confirm("Are you sure you want to permanently delete this user account?")) return;
     try {
       await apiRequest(`/users/${userId}`, { method: "DELETE" });
       loadUsers();
-    } catch (err: any) {
-      alert(err.message || "Failed to delete user");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete user");
     }
   };
 
@@ -95,25 +95,30 @@ export default function AdminUsersPage() {
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="User Account Management" subtitle="System Authentication & Role Governance" />
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <main className="flex-1 p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
         {/* Controls Bar */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4.5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4.5 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex flex-wrap items-center gap-3">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, email, roll no..."
-              className="bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-900 w-72 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors shadow-2xs"
-            />
+            <div className="relative w-72">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search name, email, roll no..."
+                className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg pl-9 pr-3 py-2 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
 
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-blue-600 shadow-2xs transition-colors"
+              className="bg-surface-container-low border border-outline-variant/50 rounded-lg px-3 py-2 text-xs text-on-surface font-medium focus:outline-none focus:border-primary transition-colors"
             >
               <option value="ALL">All Roles ({users.length})</option>
               <option value="STUDENT">Students</option>
@@ -122,20 +127,28 @@ export default function AdminUsersPage() {
             </select>
           </div>
 
-          <span className="text-xs text-slate-500 font-medium">
-            Showing <strong className="text-slate-900 font-mono">{filteredUsers.length}</strong> of <strong className="text-slate-900 font-mono">{users.length}</strong> Accounts
+          <span className="text-xs text-on-surface-variant font-medium">
+            Showing <strong className="text-on-surface font-mono">{filteredUsers.length}</strong> of <strong className="text-on-surface font-mono">{users.length}</strong> Accounts
           </span>
         </div>
 
         {/* Users Table */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
+        <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3.5 border-b border-outline-variant/30">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[20px]">manage_accounts</span>
+              <h3 className="text-sm font-bold text-on-surface">Directory Accounts</h3>
+            </div>
+            <span className="font-mono text-[11px] text-outline font-semibold uppercase">Authorized Users</span>
+          </div>
+
           {loading ? (
             <TableSkeleton rows={6} cols={7} />
           ) : filteredUsers.length > 0 ? (
             <div className="overflow-x-auto text-xs">
-              <table className="w-full text-left academic-table">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+                  <tr className="border-b border-outline-variant/30 text-outline uppercase text-[10px] tracking-wider font-mono">
                     <th className="pb-2.5 font-bold">Name</th>
                     <th className="pb-2.5 font-bold">Email</th>
                     <th className="pb-2.5 font-bold">Role</th>
@@ -145,11 +158,11 @@ export default function AdminUsersPage() {
                     <th className="pb-2.5 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-outline-variant/20">
                   {filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3 font-bold text-slate-900">{u.name}</td>
-                      <td className="py-3 text-slate-600 font-mono text-[11px]">{u.email}</td>
+                    <tr key={u.id} className="hover:bg-surface-container-low/70 transition-colors">
+                      <td className="py-3 font-bold text-on-surface">{u.name}</td>
+                      <td className="py-3 text-on-surface-variant font-mono text-[11px]">{u.email}</td>
                       <td className="py-3">
                         <Badge
                           variant={
@@ -159,24 +172,28 @@ export default function AdminUsersPage() {
                           {u.role}
                         </Badge>
                       </td>
-                      <td className="py-3 text-slate-600">{u.department || "Computer Engineering"}</td>
-                      <td className="py-3 font-mono text-slate-600 text-[11px]">
+                      <td className="py-3 text-on-surface-variant">{u.department || "Computer Engineering"}</td>
+                      <td className="py-3 font-mono text-on-surface-variant text-[11px]">
                         {u.enrollmentNo || u.employeeId || "ADMIN"}
                       </td>
-                      <td className="py-3 text-slate-500">{new Date(u.createdAt).toLocaleDateString()}</td>
+                      <td className="py-3 text-on-surface-variant font-mono text-[11px]">
+                        {new Date(u.createdAt).toLocaleDateString()}
+                      </td>
                       <td className="py-3 text-right space-x-2">
                         <button
                           onClick={() => handleOpenEdit(u)}
-                          className="px-3 py-1 text-xs text-blue-700 hover:bg-blue-50 border border-blue-200 rounded-md font-semibold cursor-pointer transition-all btn-press"
+                          className="px-2.5 py-1 text-xs text-primary hover:bg-surface-container border border-primary/30 rounded-lg font-semibold cursor-pointer transition-all inline-flex items-center gap-1"
                         >
-                          Edit
+                          <span className="material-symbols-outlined text-[13px]">edit</span>
+                          <span>Edit</span>
                         </button>
                         {u.role !== "ADMIN" && (
                           <button
                             onClick={() => handleDeleteUser(u.id)}
-                            className="px-3 py-1 text-xs text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-md font-semibold cursor-pointer transition-all btn-press"
+                            className="px-2.5 py-1 text-xs text-error hover:bg-error-container/40 border border-error/30 rounded-lg font-semibold cursor-pointer transition-all inline-flex items-center gap-1"
                           >
-                            Delete
+                            <span className="material-symbols-outlined text-[13px]">delete</span>
+                            <span>Delete</span>
                           </button>
                         )}
                       </td>
@@ -192,74 +209,85 @@ export default function AdminUsersPage() {
 
         {/* Edit User Modal */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl text-xs space-y-4">
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl max-w-md w-full p-6 shadow-xl text-xs space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between pb-3.5 border-b border-outline-variant/30">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Edit User: {editingUser.name}</h3>
-                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">{editingUser.email}</p>
+                  <h3 className="text-sm font-bold text-on-surface">Edit User: {editingUser.name}</h3>
+                  <p className="text-[11px] text-on-surface-variant font-mono mt-0.5">{editingUser.email}</p>
                 </div>
-                <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer p-1">
-                  ×
+                <button
+                  onClick={() => setEditingUser(null)}
+                  className="text-outline hover:text-on-surface font-bold text-xl cursor-pointer p-1"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
                 </button>
               </div>
 
-              <form onSubmit={handleSaveEdit} className="space-y-3.5">
+              <form onSubmit={handleSaveEdit} className="space-y-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Full Name</label>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Full Name
+                  </label>
                   <input
                     type="text"
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary transition-colors font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Department</label>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Department
+                  </label>
                   <input
                     type="text"
                     value={editDepartment}
                     onChange={(e) => setEditDepartment(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary transition-colors font-medium"
                   />
                 </div>
 
                 {editingUser.role === "STUDENT" ? (
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Enrollment Number</label>
+                    <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                      Enrollment Number
+                    </label>
                     <input
                       type="text"
                       value={editEnrollment}
                       onChange={(e) => setEditEnrollment(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                      className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary font-mono uppercase transition-colors"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Employee ID</label>
+                    <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                      Employee ID
+                    </label>
                     <input
                       type="text"
                       value={editEmployeeId}
                       onChange={(e) => setEditEmployeeId(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                      className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary font-mono uppercase transition-colors"
                     />
                   </div>
                 )}
 
-                <div className="pt-3.5 border-t border-slate-100 flex justify-end space-x-2.5">
+                <div className="pt-3.5 border-t border-outline-variant/30 flex justify-end space-x-2.5">
                   <button
                     type="button"
                     onClick={() => setEditingUser(null)}
-                    className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container font-semibold cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-semibold rounded-lg shadow-xs cursor-pointer transition-all btn-press"
+                    className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary font-semibold rounded-lg shadow-xs cursor-pointer transition-all disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Save Changes"}
                   </button>

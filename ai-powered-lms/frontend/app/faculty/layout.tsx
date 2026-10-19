@@ -1,19 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/AuthContext";
+import React from "react";
 import DashboardShell from "@/components/layout/DashboardShell";
+import RoleGuard from "@/components/auth/RoleGuard";
 
 export default function FacultyLayout({ children }: { children: React.ReactNode }) {
-  const { status, role } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  return <DashboardShell role="FACULTY">{children}</DashboardShell>;
+  return (
+    <RoleGuard allowedRole="FACULTY">
+      <DashboardShell role="FACULTY">{children}</DashboardShell>
+    </RoleGuard>
+  );
 }

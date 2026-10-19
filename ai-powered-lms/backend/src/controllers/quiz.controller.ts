@@ -16,9 +16,12 @@ import {
 
 export async function listQuizzes(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
     const courseId = getParam(req.params.courseId);
-    const role = req.user?.role || "STUDENT";
-    const quizzes = await getQuizzesByCourse(courseId, role);
+    const quizzes = await getQuizzesByCourse(courseId, req.user.userId, req.user.role);
 
     res.status(200).json({
       success: true,
@@ -31,9 +34,12 @@ export async function listQuizzes(req: AuthRequest, res: Response, next: NextFun
 
 export async function getQuiz(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
     const id = getParam(req.params.id);
-    const role = req.user?.role || "STUDENT";
-    const quiz = await getQuizById(id, role);
+    const quiz = await getQuizById(id, req.user.userId, req.user.role);
 
     res.status(200).json({
       success: true,
@@ -158,7 +164,7 @@ export async function createAttempt(req: AuthRequest, res: Response, next: NextF
     }
 
     const id = getParam(req.params.id);
-    const result = await submitQuizAttempt(id, req.user.userId, req.body);
+    const result = await submitQuizAttempt(id, req.user.userId, req.user.role, req.body);
 
     res.status(201).json({
       success: true,

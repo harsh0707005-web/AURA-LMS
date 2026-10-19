@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Role } from "../generated/prisma/enums.js";
+import { Role, AccountStatus } from "../generated/prisma/enums.js";
 
 export { Role };
 
@@ -18,6 +18,7 @@ export interface RegisterInput {
   email: string;
   password: string;
   role?: Role;
+  accountType?: "STUDENT" | "FACULTY";
   department?: string;
   enrollmentNo?: string;
   employeeId?: string;
@@ -41,6 +42,7 @@ export interface UserResponse {
   name: string;
   email: string;
   role: Role;
+  status: AccountStatus;
   department: string | null;
   enrollmentNo: string | null;
   employeeId: string | null;

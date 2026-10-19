@@ -80,6 +80,14 @@ export async function getMaterialById(materialId: string, studentId?: string) {
  * before retrieving from cloud S3 or local storage.
  */
 export async function getMaterialFile(materialId: string, userId: string, role: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user || user.role !== role) {
+    throw Object.assign(new Error("Forbidden: Invalid user role credentials"), { statusCode: 403 });
+  }
+
   const material = await prisma.material.findUnique({
     where: { id: materialId },
     include: {
@@ -102,14 +110,24 @@ export async function getMaterialFile(materialId: string, userId: string, role: 
           courseId: material.courseId,
         },
       },
+      select: { status: true },
     });
 
-    if (!enrollment) {
+    if (!enrollment || enrollment.status !== "ACTIVE") {
       throw Object.assign(
-        new Error("Forbidden: You are not enrolled in the course offering this material"),
+        new Error("Forbidden: An active course enrollment is required to download course materials"),
         { statusCode: 403 }
       );
     }
+  } else if (role === "FACULTY") {
+    if (material.course.facultyId !== userId) {
+      throw Object.assign(
+        new Error("Forbidden: Faculty may only download course materials for their own courses"),
+        { statusCode: 403 }
+      );
+    }
+  } else if (role !== "ADMIN") {
+    throw Object.assign(new Error("Forbidden: Unsupported user role"), { statusCode: 403 });
   }
 
   if (!material.fileUrl) {
@@ -304,6 +322,9 @@ export async function createMaterial(
   if (!title || !unit) {
     throw Object.assign(new Error("Material title and unit are required"), { statusCode: 400 });
   }
+  if (title.trim().length > 200 || unit.trim().length > 100) {
+    throw Object.assign(new Error("Material title or unit is too long"), { statusCode: 400 });
+  }
 
   // If a file buffer or path is provided, execute multi-stage upload + ingestion with compensation
   if (fileBufferOrPath) {
@@ -490,16 +511,67 @@ export async function deleteMaterial(materialId: string, userId: string, role: s
 
 export async function getMaterialChunks(
   materialId: string,
+  userId: string,
+  role: string,
   page = 1,
   limit = 20
 ) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user || user.role !== role) {
+    throw Object.assign(new Error("Forbidden: Invalid user role credentials"), { statusCode: 403 });
+  }
+
   const material = await prisma.material.findUnique({
     where: { id: materialId },
-    select: { id: true, title: true, unit: true, courseId: true, ragChunksCount: true },
+    include: {
+      course: {
+        select: { id: true, facultyId: true },
+      },
+    },
   });
 
   if (!material) {
     throw Object.assign(new Error("Material not found"), { statusCode: 404 });
+  }
+
+  // Consistent with the institutional AI policy, administrators are not granted
+  // access to course learning content or vector chunks. Deny by default.
+  if (role === "ADMIN") {
+    throw Object.assign(
+      new Error("Forbidden: Administrator course learning content access is not enabled by policy"),
+      { statusCode: 403 }
+    );
+  }
+
+  if (role === "FACULTY") {
+    if (material.course.facultyId !== userId) {
+      throw Object.assign(
+        new Error("Forbidden: Faculty may only access material chunks for their own courses"),
+        { statusCode: 403 }
+      );
+    }
+  } else if (role === "STUDENT") {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        studentId_courseId: {
+          studentId: userId,
+          courseId: material.courseId,
+        },
+      },
+      select: { status: true },
+    });
+
+    if (!enrollment || enrollment.status !== "ACTIVE") {
+      throw Object.assign(
+        new Error("Forbidden: An active course enrollment is required to view course material chunks"),
+        { statusCode: 403 }
+      );
+    }
+  } else {
+    throw Object.assign(new Error("Forbidden: Unsupported user role"), { statusCode: 403 });
   }
 
   const offset = (page - 1) * limit;

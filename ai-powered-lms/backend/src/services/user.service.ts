@@ -1,5 +1,6 @@
 import prisma from "../lib/prisma.js";
 import { Role, UpdateProfileInput } from "../types/auth.types.js";
+import { assertSafeProfileUpdate } from "./auth.service.js";
 
 export async function getAllUsers(roleFilter?: Role) {
   return await prisma.user.findMany({
@@ -9,6 +10,7 @@ export async function getAllUsers(roleFilter?: Role) {
       name: true,
       email: true,
       role: true,
+      status: true,
       department: true,
       enrollmentNo: true,
       employeeId: true,
@@ -28,6 +30,7 @@ export async function getUserById(userId: string) {
       name: true,
       email: true,
       role: true,
+      status: true,
       department: true,
       enrollmentNo: true,
       employeeId: true,
@@ -45,6 +48,7 @@ export async function getUserById(userId: string) {
 }
 
 export async function updateUser(userId: string, input: UpdateProfileInput & { role?: Role }) {
+  assertSafeProfileUpdate(input);
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
     throw Object.assign(new Error("User not found"), { statusCode: 404 });
@@ -54,10 +58,7 @@ export async function updateUser(userId: string, input: UpdateProfileInput & { r
     where: { id: userId },
     data: {
       ...(input.name && { name: input.name.trim() }),
-      ...(input.role && { role: input.role }),
       ...(input.department && { department: input.department.trim() }),
-      ...(input.enrollmentNo !== undefined && { enrollmentNo: input.enrollmentNo }),
-      ...(input.employeeId !== undefined && { employeeId: input.employeeId }),
       ...(input.avatarUrl !== undefined && { avatarUrl: input.avatarUrl }),
     },
     select: {

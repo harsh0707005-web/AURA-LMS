@@ -20,15 +20,16 @@ This document catalogues all external systems, APIs, database engines, file stor
 
 ### Academic Tutor LLM Generation
 - **Primary Model**: `gemini-3.7-flash` (configured via `GEMINI_GENERATION_MODEL`)
-- **Fallback Models**: Cascades automatically across `gemini-3.5-flash` $\to$ `gemini-flash-latest` $\to$ `gemini-3.5-flash-lite` if primary encounters transient rate limits or 503 high demand.
+- **Fallback Models**: Uses the ordered `GEMINI_FALLBACK_MODELS` list, or the built-in `gemini-3.5-flash` $\to$ `gemini-flash-latest` $\to$ `gemini-3.5-flash-lite` sequence, when the primary encounters retryable rate limits, timeouts, or 5xx/high-demand errors. Requested and responding models are recorded separately.
 - **Thinking Budget Optimization**:
   - **Standard Academic Chat**: Default budget set to `0` (`GEMINI_THINKING_BUDGET=0`), eliminating 3–6s model thinking latency for high-speed responsiveness.
   - **Complex Derivations**: Automatically detects proofs/derivations/theorems via regex and increases budget to `1024` tokens (`GEMINI_COMPLEX_THINKING_BUDGET=1024`).
 - **Generation Parameters**:
   - Temperature: `0.2` (Low temperature for deterministic, hallucination-free academic precision)
   - TopP: `0.9`
-  - MaxOutputTokens: `2048`
-- **Telemetry**: Full execution profiling tracking embedding latency, pgvector search time, context assembly time, generation latency, and token metrics.
+  - MaxOutputTokens: `1200` for normal tutor responses and `1600` for complex tutor responses by default.
+- **Budgets**: Gemini network attempts are bounded by `GEMINI_REQUEST_TIMEOUT_MS` (default `45000` ms); normal and complex generation budgets default to `90000` ms and `120000` ms. Generation defaults to one attempt per model and four total attempts.
+- **Telemetry**: Full execution profiling tracking embedding latency, pgvector search time, context assembly time, generation latency, token metrics, prompt/output character counts, requested/responding model, fallback attempts, retry count, and backoff time without logging prompt content.
 
 ---
 
@@ -112,12 +113,30 @@ LIMIT $3;
 | `GEMINI_API_KEY` | **Yes** | — | Google AI Studio API key for embedding and completion |
 | `GEMINI_EMBEDDING_MODEL` | No | `gemini-embedding-001` | 3072-dim text embedding model |
 | `GEMINI_GENERATION_MODEL` | No | `gemini-3.7-flash` | Primary academic tutor generation model |
+| `GEMINI_FALLBACK_MODELS` | No | Built-in fallback list | Ordered comma-separated fallback models |
 | `GEMINI_THINKING_BUDGET` | No | `0` | Thinking budget for low-latency academic responses |
 | `GEMINI_COMPLEX_THINKING_BUDGET` | No | `1024` | Thinking budget for mathematical proofs and derivations |
+| `GEMINI_REQUEST_TIMEOUT_MS` | No | `45000` | Per-network-attempt Gemini timeout |
+| `GEMINI_EMBEDDING_BUDGET_MS` | No | `30000` | Total embedding retry budget |
+| `GEMINI_GENERATION_BUDGET_MS` | No | `90000` | Normal generation/fallback budget |
+| `GEMINI_COMPLEX_GENERATION_BUDGET_MS` | No | `120000` | Complex generation budget |
+| `GEMINI_MAX_ATTEMPTS_PER_MODEL` | No | `1` | Maximum generation attempts per model |
+| `GEMINI_MAX_TOTAL_ATTEMPTS` | No | `4` | Maximum generation attempts across fallback models |
+| `GEMINI_TUTOR_MAX_OUTPUT_TOKENS` | No | `1200` | Normal tutor output cap |
+| `GEMINI_TUTOR_COMPLEX_MAX_OUTPUT_TOKENS` | No | `1600` | Complex tutor output cap |
+| `AI_MESSAGE_WORKFLOW_TIMEOUT_MS` | No | `120000` | Durable AI-message workflow deadline |
+| `DEFAULT_LLM_PROVIDER` | No | `gemini` | Active generation provider; Groq is opt-in |
+| `GROQ_API_KEY` | No | Unset | Optional Groq credential; does not change Gemini embeddings |
+| `GROQ_MODEL` | No | `openai/gpt-oss-20b` | Optional Groq completion model |
+| `GROQ_API_URL` | No | Groq chat-completions endpoint | Optional Groq endpoint override |
+| `GROQ_TIMEOUT_MS` | No | `30000` | Per-attempt Groq timeout |
 | `RAG_TOP_K` | No | `5` | Maximum number of chunks to retrieve per RAG query |
 | `RAG_MIN_SIMILARITY` | No | `0.55` | Cosine similarity threshold for RAG grounding |
+| `RAG_MAX_CONTEXT_CHARS` | No | `10000` | Maximum retrieved context characters |
+| `RAG_MAX_HISTORY_CHARS` | No | `4000` | Maximum conversation history characters |
 
 ### Frontend Environment (`frontend/.env.local`)
 | Variable | Required | Default | Purpose |
 | :--- | :--- | :--- | :--- |
 | `NEXT_PUBLIC_API_URL` | No | `http://localhost:5000/api` | Backend base URL used by client-side fetchers |
+| `NEXT_PUBLIC_AI_REQUEST_TIMEOUT_MS` | No | `125000` | Client abort window for tutor requests |

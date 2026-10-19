@@ -7,6 +7,7 @@ import {
   createConversation,
   deleteConversation,
   postMessageToConversation,
+  getAIMessageRequest,
 } from "../services/ai.service.js";
 
 export async function listConversations(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
@@ -16,7 +17,7 @@ export async function listConversations(req: AuthRequest, res: Response, next: N
       return;
     }
 
-    const conversations = await getUserConversations(req.user.userId);
+    const conversations = await getUserConversations(req.user.userId, req.user.role);
     res.status(200).json({ success: true, data: conversations });
   } catch (error) {
     next(error);
@@ -31,7 +32,7 @@ export async function getConversation(req: AuthRequest, res: Response, next: Nex
     }
 
     const id = getParam(req.params.id);
-    const conversation = await getConversationById(id, req.user.userId);
+    const conversation = await getConversationById(id, req.user.userId, req.user.role);
     res.status(200).json({ success: true, data: conversation });
   } catch (error) {
     next(error);
@@ -45,7 +46,7 @@ export async function newConversation(req: AuthRequest, res: Response, next: Nex
       return;
     }
 
-    const created = await createConversation(req.user.userId, req.body);
+    const created = await createConversation(req.user.userId, req.user.role, req.body);
     res.status(201).json({ success: true, data: created });
   } catch (error) {
     next(error);
@@ -60,7 +61,7 @@ export async function removeConversation(req: AuthRequest, res: Response, next: 
     }
 
     const id = getParam(req.params.id);
-    const result = await deleteConversation(id, req.user.userId);
+    const result = await deleteConversation(id, req.user.userId, req.user.role);
     res.status(200).json({ success: true, message: result.message });
   } catch (error) {
     next(error);
@@ -75,8 +76,46 @@ export async function sendMessage(req: AuthRequest, res: Response, next: NextFun
     }
 
     const id = getParam(req.params.id);
-    const result = await postMessageToConversation(id, req.user.userId, req.body);
-    res.status(201).json({ success: true, data: result });
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+      res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
+      return;
+    }
+    const headerKey = req.headers["idempotency-key"];
+    const headerIdempotencyKey = typeof headerKey === "string" ? headerKey.trim() : "";
+    const bodyIdempotencyKey = typeof req.body.idempotencyKey === "string" ? req.body.idempotencyKey.trim() : "";
+    const idempotencyKey = headerIdempotencyKey || bodyIdempotencyKey;
+    if (!idempotencyKey) {
+      res.status(400).json({ success: false, message: "Idempotency-Key header is required" });
+      return;
+    }
+    const result = await postMessageToConversation(id, req.user.userId, req.user.role, {
+      ...req.body,
+      idempotencyKey,
+    });
+    res.status(result.replayed ? 200 : 201).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMessageRequest(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
+
+    const conversationId = getParam(req.params.id);
+    const key = getParam(req.params.key);
+    const result = await getAIMessageRequest(conversationId, key, req.user.userId, req.user.role);
+    res.status(200).json({
+      success: true,
+      data: {
+        ...result,
+        status: result.request.status,
+        error: result.request.errorMessage,
+      },
+    });
   } catch (error) {
     next(error);
   }

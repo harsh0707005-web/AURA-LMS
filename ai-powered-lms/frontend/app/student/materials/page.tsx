@@ -65,18 +65,19 @@ export default function StudentMaterialsPage() {
       : materials.filter((m) => m.courseId === selectedCourseId);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="Course Materials & Lecture Notes" subtitle="Grounded Syllabus Repositories" />
 
-      <main className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {/* Filter Bar */}
-        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-4 shadow-xs">
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="font-semibold text-slate-700">Filter Course:</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-container-lowest border border-surface-container-high rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-semibold text-on-surface">Filter Course:</span>
             <select
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-slate-800 font-medium focus:outline-none focus:border-blue-600 font-mono"
+              className="bg-surface-container-low border border-surface-container-high rounded-xl px-3 py-1.5 text-on-surface font-label-sm text-[11px] focus:outline-hidden focus:ring-1 focus:ring-primary"
+              aria-label="Filter by course"
             >
               <option value="ALL">All Enrolled Courses</option>
               {courses.map((c) => (
@@ -87,7 +88,7 @@ export default function StudentMaterialsPage() {
             </select>
           </div>
 
-          <span className="text-[11px] text-slate-500 font-medium font-mono">
+          <span className="font-label-sm text-[11px] text-outline">
             Showing {filteredMaterials.length} Documents
           </span>
         </div>
@@ -96,7 +97,7 @@ export default function StudentMaterialsPage() {
         {loading ? (
           <TableSkeleton rows={5} cols={3} />
         ) : filteredMaterials.length > 0 ? (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-3">
             {filteredMaterials.map((m) => {
               const progress = m.progress;
               const percent = progress?.progressPercent || 0;
@@ -106,70 +107,70 @@ export default function StudentMaterialsPage() {
               return (
                 <div
                   key={m.id}
-                  className="card-interactive p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs group"
+                  className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs shadow-sm hover:border-outline-variant transition-all"
                 >
-                  <div className="flex items-center space-x-3.5">
-                    <div className="h-10 w-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-xl shrink-0">
-                      📄
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-11 h-11 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center justify-center text-primary shrink-0 shadow-2xs">
+                      <span className="material-symbols-outlined text-[24px]">description</span>
                     </div>
-                    <div>
-                      <div className="flex items-center space-x-2 mb-0.5">
-                        <span className="font-bold text-slate-900 text-sm">{m.title}</span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-headline-sm font-bold text-on-surface text-sm truncate">
+                          {m.title}
+                        </span>
                         {m.course && (
-                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 text-[10px] font-bold border border-blue-200 uppercase">
+                          <span className="px-2 py-0.5 rounded-md bg-primary-fixed text-primary font-label-sm text-[10px] font-bold border border-primary/20 uppercase">
                             {m.course.code}
                           </span>
                         )}
                         {isCompleted ? (
-                          <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                          <span className="px-2 py-0.5 rounded-md bg-[#ecfdf5] text-[#065f46] font-label-sm text-[10px] font-bold border border-[#a7f3d0]">
                             ✓ Completed
                           </span>
                         ) : percent > 0 ? (
-                          <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
+                          <span className="px-2 py-0.5 rounded-md bg-primary-fixed text-primary font-label-sm text-[10px] font-bold border border-primary/20">
                             In Progress ({percent}%)
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium">
+                          <span className="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-[10px]">
                             Not Started
                           </span>
                         )}
                       </div>
-                      <div className="text-slate-500 flex items-center space-x-2">
+                      <div className="font-label-sm text-[11px] text-outline flex flex-wrap items-center gap-2">
                         <span>{m.unit}</span>
                         <span>•</span>
                         <span>{m.fileSize}</span>
                         <span>•</span>
-                        <span>{m.ragChunksCount} Grounded RAG Chunks Indexed</span>
+                        <span>{m.ragChunksCount} Grounded RAG Chunks</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-surface-container-high">
                     {/* Mini Progress Bar */}
                     <div className="w-24 sm:w-28 space-y-1">
-                      <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                      <div className="flex justify-between font-label-sm text-[10px] text-outline">
                         <span>Progress</span>
-                        <span className="font-bold font-mono">{percent}%</span>
+                        <span className="font-bold text-on-surface">{percent}%</span>
                       </div>
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
+                      <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
                         <div
-                          className={`h-full transition-all duration-300 ${
-                            isCompleted ? "bg-emerald-600" : "bg-blue-600"
-                          }`}
+                          className="h-full bg-primary-container transition-all duration-300"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
                     </div>
 
-                    {/* Open / Resume Button */}
                     <button
+                      type="button"
                       onClick={() => setViewingMaterial(m)}
-                      className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded text-xs shadow-xs transition-colors shrink-0 cursor-pointer"
+                      className="px-4 py-2 bg-primary-container hover:opacity-90 text-on-primary font-semibold rounded-xl text-xs shadow-2xs transition-all shrink-0 cursor-pointer"
                     >
                       {isCompleted
                         ? "Review Document →"
                         : percent > 0
-                        ? `Continue (Page ${currentPage}) →`
+                        ? `Continue (p. ${currentPage}) →`
                         : "Open Material →"}
                     </button>
                   </div>
@@ -179,13 +180,13 @@ export default function StudentMaterialsPage() {
           </div>
         ) : (
           <EmptyState
-            title="No Materials Available"
-            description="No course materials match the selected filter."
+            title="No Documents Found"
+            description="No lecture materials match your current course selection."
           />
         )}
       </main>
 
-      {/* PDF Reading Modal */}
+      {/* Embedded Protected PDF Modal */}
       {viewingMaterial && (
         <PDFViewerModal
           material={viewingMaterial}
@@ -196,4 +197,3 @@ export default function StudentMaterialsPage() {
     </div>
   );
 }
-

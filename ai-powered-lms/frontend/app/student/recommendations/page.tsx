@@ -8,8 +8,7 @@ import { Recommendation } from "@/lib/types";
 import Topbar from "@/components/layout/Topbar";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
-
-import SkeletonLoader, { CardSkeleton } from "@/components/ui/SkeletonLoader";
+import { CardSkeleton } from "@/components/ui/SkeletonLoader";
 
 export default function StudentRecommendationsPage() {
   const { user } = useAuth();
@@ -36,20 +35,23 @@ export default function StudentRecommendationsPage() {
   }, [user]);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar
         title="Personalized Study Recommendations"
         subtitle="Automated Remediations from Assessment Diagnostics"
       />
 
-      <main className="flex-1 p-6 max-w-5xl mx-auto w-full space-y-6 animate-fade-in">
-        <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-4.5 text-xs text-blue-950 leading-relaxed shadow-2xs flex items-start space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 text-base">
-            💡
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full space-y-6 animate-fade-in">
+        {/* Academic Rationale Banner */}
+        <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-4.5 text-xs text-on-surface shadow-sm flex items-start gap-3.5">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[20px]">lightbulb</span>
           </div>
           <div>
-            <strong className="block font-bold text-blue-900 mb-0.5">How Recommendations Work:</strong>
-            AURA LMS analyzes incorrect quiz answers and low module mastery scores to generate targeted review tasks, practice retests, and AI Tutor study prompts.
+            <strong className="block font-headline-sm font-bold text-on-surface mb-0.5">
+              How Recommendations Work:
+            </strong>
+            AURA LMS analyzes incorrect quiz answers and module mastery levels to generate targeted review tasks, practice retests, and AI Tutor study prompts.
           </div>
         </div>
 
@@ -60,27 +62,33 @@ export default function StudentRecommendationsPage() {
             {recommendations.map((rec) => (
               <div
                 key={rec.id}
-                className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs card-interactive transition-all"
+                className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs hover:border-outline-variant transition-all"
               >
-                <div className="space-y-1.5">
-                  <div className="flex items-center space-x-2">
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-center gap-2">
                     <Badge variant="info">{rec.type}</Badge>
                     {rec.course && (
-                      <span className="px-2.5 py-0.5 rounded-md bg-slate-100 font-bold text-slate-800 text-[10px] tracking-wider uppercase border border-slate-200">
+                      <span className="px-2.5 py-0.5 rounded-md bg-surface-container font-bold text-on-surface font-label-sm text-[10px] tracking-wider uppercase border border-surface-container-high">
                         {rec.course.code}
                       </span>
                     )}
-                    <span className="text-slate-500 font-medium text-[11px]">⏱️ {rec.estimatedMinutes} mins target</span>
+                    <span className="font-label-sm text-outline text-[11px]">
+                      ⏱️ {rec.estimatedMinutes} mins target
+                    </span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900">{rec.title}</h3>
-                  <p className="text-slate-600 leading-relaxed max-w-2xl text-[11px]">{rec.reason}</p>
+                  <h3 className="font-headline-sm text-sm font-bold text-on-surface leading-snug">
+                    {rec.title}
+                  </h3>
+                  <p className="font-body-sm text-on-surface-variant leading-relaxed max-w-2xl text-[11px]">
+                    {rec.reason}
+                  </p>
                 </div>
 
-                <div className="shrink-0 flex items-center space-x-2">
+                <div className="shrink-0 flex items-center">
                   <Link
                     href={rec.type === "QUIZ_RETEST" ? "/student/quizzes" : "/student/ai-tutor"}
-                    className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-lg text-xs shadow-xs transition-all btn-press"
+                    className="px-4 py-2 bg-primary-container hover:opacity-90 text-on-primary font-semibold rounded-xl text-xs shadow-xs transition-opacity"
                   >
                     Start Action →
                   </Link>
@@ -91,7 +99,9 @@ export default function StudentRecommendationsPage() {
         ) : (
           <EmptyState
             title="No Active Recommendations"
-            description="You have completed all current remediation tasks."
+            description="You have completed all current remediation tasks. Great job maintaining syllabus mastery!"
+            actionText="Explore Topics in AI Tutor"
+            actionHref="/student/ai-tutor"
           />
         )}
       </main>

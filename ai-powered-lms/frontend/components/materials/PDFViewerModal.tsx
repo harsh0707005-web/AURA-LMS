@@ -7,6 +7,37 @@ import { apiRequest } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+interface PdfViewport {
+  width: number;
+  height: number;
+}
+
+interface PdfRenderContext {
+  canvasContext: CanvasRenderingContext2D;
+  viewport: PdfViewport;
+}
+
+interface PdfPageProxy {
+  getViewport: (params: { scale: number }) => PdfViewport;
+  render: (renderContext: PdfRenderContext) => { promise: Promise<void> };
+}
+
+interface PdfDocumentProxy {
+  numPages: number;
+  getPage: (pageNumber: number) => Promise<PdfPageProxy>;
+}
+
+interface PdfJsLibrary {
+  GlobalWorkerOptions: {
+    workerSrc: string;
+  };
+  getDocument: (params: { data: ArrayBuffer }) => { promise: Promise<PdfDocumentProxy> };
+}
+
+interface PdfJsWindow extends Window {
+  pdfjsLib?: PdfJsLibrary;
+}
+
 interface PDFViewerModalProps {
   material: Material;
   onClose: () => void;
@@ -20,8 +51,7 @@ export default function PDFViewerModal({
 }: PDFViewerModalProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<PdfDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(material.progress?.currentPage || 1);
   const [totalPages, setTotalPages] = useState<number>(material.progress?.totalPages || 1);
   const [progressPercent, setProgressPercent] = useState<number>(
@@ -42,6 +72,7 @@ export default function PDFViewerModal({
   // 1. Fetch initial progress and load PDF document
   useEffect(() => {
     let isMounted = true;
+    let loadedBlobUrl: string | null = null;
 
     async function loadPdfAndProgress() {
       try {
@@ -82,8 +113,8 @@ export default function PDFViewerModal({
 
         const blob = await fileRes.blob();
         const blobUrl = URL.createObjectURL(blob);
+        loadedBlobUrl = blobUrl;
         if (!isMounted) return;
-        setPdfBlobUrl(blobUrl);
 
         const arrayBuffer = await blob.arrayBuffer();
 
@@ -97,14 +128,11 @@ export default function PDFViewerModal({
         setTotalPages(count);
 
         // Ensure page index is valid
-        const initialPage = material.progress?.currentPage
-          ? Math.min(material.progress.currentPage, count)
-          : 1;
-        setCurrentPage(initialPage);
-      } catch (err: any) {
+        setCurrentPage((page) => Math.min(page, count));
+      } catch (err: unknown) {
         if (!isMounted) return;
         console.error("PDF Loading Error:", err);
-        setError(err.message || "Failed to render PDF document.");
+        setError(getErrorMessage(err, "Failed to render PDF document."));
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -114,7 +142,7 @@ export default function PDFViewerModal({
 
     return () => {
       isMounted = false;
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      if (loadedBlobUrl) URL.revokeObjectURL(loadedBlobUrl);
     };
   }, [material.id]);
 
@@ -393,11 +421,13 @@ export default function PDFViewerModal({
 /**
  * Loads the PDF.js standalone library dynamically via CDN.
  */
-let pdfjsPromise: Promise<any> | null = null;
+let pdfjsPromise: Promise<PdfJsLibrary> | null = null;
 
-function loadPdfJs(): Promise<any> {
-  if (typeof window === "undefined") return Promise.reject("Window is undefined");
-  if ((window as any).pdfjsLib) return Promise.resolve((window as any).pdfjsLib);
+function loadPdfJs(): Promise<PdfJsLibrary> {
+  if (typeof window === "undefined") return Promise.reject(new Error("Window is undefined"));
+
+  const pdfJsWindow = window as PdfJsWindow;
+  if (pdfJsWindow.pdfjsLib) return Promise.resolve(pdfJsWindow.pdfjsLib);
 
   if (!pdfjsPromise) {
     pdfjsPromise = new Promise((resolve, reject) => {
@@ -405,7 +435,7 @@ function loadPdfJs(): Promise<any> {
       script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
       script.async = true;
       script.onload = () => {
-        const lib = (window as any).pdfjsLib;
+        const lib = (window as PdfJsWindow).pdfjsLib;
         if (lib) {
           lib.GlobalWorkerOptions.workerSrc =
             "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -420,4 +450,10 @@ function loadPdfJs(): Promise<any> {
   }
 
   return pdfjsPromise;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === "string") return error || fallback;
+  return fallback;
 }

@@ -55,9 +55,13 @@ export class StudentContextService {
         });
       }
 
-      // 2. Fetch quiz attempts to extract weak topics and performance
+      // 2. Fetch quiz attempts to extract weak topics and performance. Course-
+      // bound tutor requests must never mix assessment data from another course.
       const quizAttempts = await prisma.quizAttempt.findMany({
-        where: { studentId },
+        where: {
+          studentId,
+          ...(courseId ? { quiz: { courseId } } : {}),
+        },
         include: {
           quiz: {
             select: {
@@ -71,9 +75,8 @@ export class StudentContextService {
         take: 10,
       });
 
-      // 3. Extract unique weak topics (prioritizing target course if specified)
+      // 3. Extract unique weak topics from the already course-scoped attempts.
       const targetCourseWeakTopics: string[] = [];
-      const generalWeakTopics: string[] = [];
 
       for (const attempt of quizAttempts) {
         if (Array.isArray(attempt.weakTopicsIdentified)) {
@@ -81,20 +84,14 @@ export class StudentContextService {
             const cleanTopic = topic.trim();
             if (!cleanTopic) continue;
 
-            if (courseId && attempt.quiz.courseId === courseId) {
-              if (!targetCourseWeakTopics.includes(cleanTopic)) {
-                targetCourseWeakTopics.push(cleanTopic);
-              }
-            } else {
-              if (!generalWeakTopics.includes(cleanTopic)) {
-                generalWeakTopics.push(cleanTopic);
-              }
+            if (!targetCourseWeakTopics.includes(cleanTopic)) {
+              targetCourseWeakTopics.push(cleanTopic);
             }
           }
         }
       }
 
-      const allWeakTopics = Array.from(new Set([...targetCourseWeakTopics, ...generalWeakTopics])).slice(0, 5);
+      const allWeakTopics = targetCourseWeakTopics.slice(0, 5);
 
       // 4. Calculate performance summary
       let performanceSummary: StudentEducationalProfile["performanceSummary"] | undefined;
@@ -108,7 +105,12 @@ export class StudentContextService {
         else if (avgScore >= 60) performanceBand = "Proficient";
         else performanceBand = "Needs Reinforcement";
 
-        const submissionCount = await prisma.submission.count({ where: { studentId } });
+        const submissionCount = await prisma.submission.count({
+          where: {
+            studentId,
+            ...(courseId ? { assignment: { courseId } } : {}),
+          },
+        });
 
         performanceSummary = {
           averageQuizScore: avgScore,
@@ -157,6 +159,9 @@ export class StudentContextService {
       // 7. Format sanitized pedagogical prompt snippet
       const pedagogicalPromptSnippet = this.buildPedagogicalPromptSnippet({
         enrollment,
+        academicLevel: enrollment?.course?.semester
+          ? `Undergraduate Semester ${enrollment.course.semester}`
+          : "Undergraduate Computer Engineering",
         performanceSummary,
         weakTopics: allWeakTopics,
         materialProgress,
@@ -182,8 +187,12 @@ export class StudentContextService {
         activeRecommendations: recommendations,
         pedagogicalPromptSnippet,
       };
-    } catch (err) {
-      console.warn("[STUDENT CONTEXT WARNING] Failed to load student educational profile, using neutral fallback:", err);
+    } catch (err: any) {
+      console.warn("[STUDENT CONTEXT WARNING] Failed to load student educational profile, using neutral fallback:", {
+        status: err?.status ?? err?.statusCode,
+        code: err?.code,
+        message: sanitizeContextError(err),
+      });
       return this.getFallbackProfile();
     }
   }
@@ -204,12 +213,14 @@ export class StudentContextService {
 
   private buildPedagogicalPromptSnippet(data: {
     enrollment: any;
+    academicLevel: string;
     performanceSummary?: StudentEducationalProfile["performanceSummary"];
     weakTopics: string[];
     materialProgress?: StudentEducationalProfile["materialProgress"];
     recommendations: Array<{ title: string; topic: string; reason: string }>;
   }): string {
     const lines: string[] = ["STUDENT EDUCATIONAL PROFILE (STRICTLY PRIVACY-PRESERVED):"];
+    lines.push(`- Academic Level: ${data.academicLevel}`);
 
     if (data.enrollment) {
       lines.push(
@@ -251,6 +262,13 @@ export class StudentContextService {
 
     return lines.join("\n");
   }
+}
+
+function sanitizeContextError(error: any): string {
+  return String(error?.message || error || "Unknown error")
+    .replace(/AIza[0-9A-Za-z_-]{20,}/g, "[REDACTED_KEY]")
+    .replace(/[A-Za-z0-9_-]{35,}/g, "[REDACTED_TOKEN]")
+    .slice(0, 1000);
 }
 
 export const studentContextService = new StudentContextService();

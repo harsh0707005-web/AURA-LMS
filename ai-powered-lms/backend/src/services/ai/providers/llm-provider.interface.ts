@@ -13,11 +13,27 @@ export interface LLMGenerationOptions {
   complexity?: "normal" | "complex";
   responseMimeType?: string; // e.g., "application/json"
   responseSchema?: any; // Structured schema for guaranteed JSON format
+  /** Remaining server-side workflow budget for this provider call. */
+  generationBudgetMs?: number;
+  /** Remaining per-attempt request budget for this provider call. */
+  requestTimeoutMs?: number;
+}
+
+export interface LLMAttemptTelemetry {
+  model: string;
+  attempt: number;
+  outcome: "success" | "error";
+  durationMs: number;
+  status?: number;
+  code?: string;
+  error?: string;
 }
 
 export interface LLMGenerationResult {
   text: string;
   model: string;
+  /** Model selected by the configured provider before fallback resolution. */
+  requestedModel?: string;
   usage?: {
     promptTokens?: number;
     completionTokens?: number;
@@ -26,6 +42,12 @@ export interface LLMGenerationResult {
   };
   durationMs: number;
   thinkingBudgetUsed?: number;
+  attempts?: LLMAttemptTelemetry[];
+  retryCount?: number;
+  fallbackUsed?: boolean;
+  backoffMs?: number;
+  promptChars?: number;
+  outputChars?: number;
 }
 
 export interface LLMProvider {

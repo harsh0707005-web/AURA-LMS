@@ -86,6 +86,13 @@ export async function extractTextFromPdf(pdfBuffer: Buffer): Promise<{
     );
   }
 
+  // Some PDF parser versions expose document-level text but omit the page
+  // array. Preserve that text as a synthetic page so ingestion cannot report
+  // successful extraction and then create zero RAG chunks.
+  if (extractedPages.length === 0 && fullCleanText) {
+    extractedPages.push({ pageNumber: 1, text: fullCleanText });
+  }
+
   return {
     pages: extractedPages,
     totalPageCount: textResult?.total || extractedPages.length || 1,

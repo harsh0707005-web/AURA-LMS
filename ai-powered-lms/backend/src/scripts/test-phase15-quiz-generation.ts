@@ -751,8 +751,8 @@ export async function runPhase15Tests() {
     // ============================================================================
     console.log("--- Executing Test 7: Student Answer Masking Security ---");
 
-    const studentQuizView = await getQuizById(savedQuiz.id, "STUDENT");
-    const facultyQuizView = await getQuizById(savedQuiz.id, "FACULTY");
+    const studentQuizView = await getQuizById(savedQuiz.id, testStudent.id, "STUDENT");
+    const facultyQuizView = await getQuizById(savedQuiz.id, testFaculty1.id, "FACULTY");
 
     const studentQuestions = studentQuizView.questions as any[];
     const facultyQuestions = facultyQuizView.questions as any[];
@@ -783,7 +783,7 @@ export async function runPhase15Tests() {
     const q1 = facultyQuestions[0];
     const q2 = facultyQuestions[1];
 
-    const attemptResult = await submitQuizAttempt(savedQuiz.id, testStudent.id, {
+    const attemptResult = await submitQuizAttempt(savedQuiz.id, testStudent.id, "STUDENT", {
       timeSpentSeconds: 95,
       answers: [
         {

@@ -7,8 +7,7 @@ import { Course, Assignment, Submission } from "@/lib/types";
 import Topbar from "@/components/layout/Topbar";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
-
-import SkeletonLoader, { CardSkeleton } from "@/components/ui/SkeletonLoader";
+import { CardSkeleton } from "@/components/ui/SkeletonLoader";
 
 export default function FacultyAssignmentsPage() {
   const { user } = useAuth();
@@ -33,7 +32,7 @@ export default function FacultyAssignmentsPage() {
   const [gradeFeedback, setGradeFeedback] = useState("");
   const [grading, setGrading] = useState(false);
 
-  const loadData = async () => {
+  const loadData = React.useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
@@ -62,11 +61,12 @@ export default function FacultyAssignmentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [targetCourseId, user]);
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    const timer = window.setTimeout(() => void loadData(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadData]);
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,8 +88,8 @@ export default function FacultyAssignmentsPage() {
       setTitle("");
       setDescription("");
       loadData();
-    } catch (err: any) {
-      alert(err.message || "Failed to create assignment");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to create assignment");
     } finally {
       setCreating(false);
     }
@@ -127,28 +127,29 @@ export default function FacultyAssignmentsPage() {
       }
 
       setGradingSubmission(null);
-    } catch (err: any) {
-      alert(err.message || "Failed to grade submission");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to grade submission");
     } finally {
       setGrading(false);
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="Assignment Management & Grading" subtitle="Problem Sets & Evaluation Hub" />
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <main className="flex-1 p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Course Assignments</h2>
-            <p className="text-xs text-slate-500">Track student submissions, assign scores, and provide rubric feedback</p>
+            <h2 className="text-base font-bold text-on-surface">Course Assignments</h2>
+            <p className="text-xs text-on-surface-variant">Track student submissions, assign rubric scores, and give feedback</p>
           </div>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs rounded-lg shadow-xs transition-all cursor-pointer btn-press"
+            className="px-4 py-2.5 bg-primary hover:bg-primary-container text-on-primary font-semibold text-xs rounded-lg shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
           >
-            + Create New Assignment
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            <span>+ Create New Assignment</span>
           </button>
         </div>
 
@@ -161,38 +162,43 @@ export default function FacultyAssignmentsPage() {
             {assignments.map((a) => (
               <div
                 key={a.id}
-                className="bg-white border border-slate-200 rounded-xl p-5.5 shadow-xs flex flex-col justify-between text-xs space-y-3.5 card-interactive"
+                className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5.5 shadow-xs flex flex-col justify-between text-xs space-y-4 hover:border-primary/40 hover:shadow-sm transition-all"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center space-x-2">
                       {a.course && (
-                        <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-900 font-bold border border-blue-200 text-[10px] tracking-wider uppercase font-mono">
+                        <span className="px-2.5 py-0.5 rounded-md bg-surface-container-high text-primary font-bold border border-outline-variant/40 text-[10px] tracking-wider uppercase font-mono">
                           {a.course.code}
                         </span>
                       )}
-                      <span className="font-semibold text-slate-500">{a.totalPoints} Points</span>
+                      <span className="font-semibold text-on-surface-variant font-mono text-[11px]">{a.totalPoints} Points</span>
                     </div>
 
-                    <span className="text-slate-500 font-medium text-[11px]">
+                    <span className="text-on-surface-variant font-medium text-[11px] flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-outline">event</span>
                       Due: {new Date(a.dueDate).toLocaleDateString()}
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-bold text-slate-900 mb-1.5 leading-snug">{a.title}</h3>
-                  <p className="text-slate-600 line-clamp-2 leading-relaxed text-[11px]">{a.description}</p>
+                  <h3 className="text-sm font-bold text-on-surface mb-1.5 leading-snug">{a.title}</h3>
+                  <p className="text-on-surface-variant line-clamp-2 leading-relaxed text-[11px]">
+                    {a.description}
+                  </p>
                 </div>
 
-                <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-slate-500 font-medium text-[11px]">
+                <div className="pt-3.5 border-t border-outline-variant/30 flex items-center justify-between">
+                  <span className="text-on-surface-variant font-medium text-[11px] flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px] text-outline">inbox</span>
                     {a._count?.submissions || (a.submissions ? a.submissions.length : 0)} Submissions Received
                   </span>
 
                   <button
                     onClick={() => handleOpenSubmissions(a)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg text-xs transition-all cursor-pointer btn-press"
+                    className="px-3.5 py-1.5 bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 text-on-surface font-semibold rounded-lg text-xs transition-all cursor-pointer flex items-center gap-1"
                   >
-                    View & Grade Submissions →
+                    <span>Submissions</span>
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   </button>
                 </div>
               </div>
@@ -201,7 +207,7 @@ export default function FacultyAssignmentsPage() {
         ) : (
           <EmptyState
             title="No Assignments Created"
-            description="You haven't posted any assignments yet."
+            description="You haven't posted any assignments or laboratory tasks yet."
             actionText="Create Assignment"
             onAction={() => setIsCreateOpen(true)}
           />
@@ -209,22 +215,30 @@ export default function FacultyAssignmentsPage() {
 
         {/* Create Assignment Modal */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl text-xs space-y-4">
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                <h3 className="text-base font-bold text-slate-900">Create New Course Assignment</h3>
-                <button onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer p-1">
-                  ×
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl max-w-lg w-full p-6 shadow-xl text-xs space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between pb-3.5 border-b border-outline-variant/30">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]">assignment_add</span>
+                  <h3 className="text-base font-bold text-on-surface">Create New Course Assignment</h3>
+                </div>
+                <button
+                  onClick={() => setIsCreateOpen(false)}
+                  className="text-outline hover:text-on-surface font-bold text-xl cursor-pointer p-1"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
                 </button>
               </div>
 
-              <form onSubmit={handleCreateAssignment} className="space-y-3.5">
+              <form onSubmit={handleCreateAssignment} className="space-y-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Target Course</label>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Target Course
+                  </label>
                   <select
                     value={targetCourseId}
                     onChange={(e) => setTargetCourseId(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-600 font-medium shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary font-medium transition-colors"
                   >
                     {courses.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -235,43 +249,51 @@ export default function FacultyAssignmentsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Assignment Title</label>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Assignment Title
+                  </label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Raft Consensus Algorithm Implementation"
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Description & Requirements</label>
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                    Description & Requirements
+                  </label>
                   <textarea
                     rows={3}
                     required
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Provide prompt details, expected output artifacts, and evaluation criteria..."
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Due Date</label>
+                    <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                      Due Date & Time
+                    </label>
                     <input
                       type="datetime-local"
                       required
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                      className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Total Points</label>
+                    <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
+                      Total Points
+                    </label>
                     <input
                       type="number"
                       required
@@ -279,25 +301,25 @@ export default function FacultyAssignmentsPage() {
                       max={200}
                       value={totalPoints}
                       onChange={(e) => setTotalPoints(Number(e.target.value))}
-                      className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                      className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary transition-colors font-mono"
                     />
                   </div>
                 </div>
 
-                <div className="pt-3.5 border-t border-slate-100 flex justify-end space-x-2.5">
+                <div className="pt-3.5 border-t border-outline-variant/30 flex justify-end space-x-2.5">
                   <button
                     type="button"
                     onClick={() => setIsCreateOpen(false)}
-                    className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container font-semibold cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-semibold rounded-lg shadow-xs cursor-pointer transition-all btn-press"
+                    className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary font-semibold rounded-lg shadow-xs cursor-pointer transition-all flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    {creating ? "Publishing..." : "Publish Assignment"}
+                    <span>{creating ? "Publishing..." : "Publish Assignment"}</span>
                   </button>
                 </div>
               </form>
@@ -307,22 +329,22 @@ export default function FacultyAssignmentsPage() {
 
         {/* View & Grade Submissions Modal */}
         {viewingSubmissionsAssignment && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-6 shadow-xl text-xs space-y-4 max-h-[85vh] flex flex-col">
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl max-w-2xl w-full p-6 shadow-xl text-xs space-y-4 max-h-[85vh] flex flex-col animate-fade-in">
+              <div className="flex items-center justify-between pb-3.5 border-b border-outline-variant/30">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-bold text-on-surface">
                     Submissions: {viewingSubmissionsAssignment.title}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-[11px] text-on-surface-variant mt-0.5">
                     Total Submissions: {submissions.length} • Max Points: {viewingSubmissionsAssignment.totalPoints}
                   </p>
                 </div>
                 <button
                   onClick={() => setViewingSubmissionsAssignment(null)}
-                  className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer p-1"
+                  className="text-outline hover:text-on-surface font-bold text-xl cursor-pointer p-1"
                 >
-                  ×
+                  <span className="material-symbols-outlined text-[20px]">close</span>
                 </button>
               </div>
 
@@ -331,20 +353,21 @@ export default function FacultyAssignmentsPage() {
                   submissions.map((sub) => (
                     <div
                       key={sub.id}
-                      className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 card-interactive"
+                      className="p-4 border border-outline-variant/30 rounded-xl bg-surface-container-low/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-900">{sub.student?.name || "Student"}</span>
-                          <span className="font-mono text-[10px] text-slate-500">({sub.student?.enrollmentNo || "N/A"})</span>
+                          <span className="font-bold text-on-surface">{sub.student?.name || "Student"}</span>
+                          <span className="font-mono text-[10px] text-outline">({sub.student?.enrollmentNo || "N/A"})</span>
                           <Badge variant={sub.status === "GRADED" ? "success" : "warning"}>
                             {sub.status === "GRADED" ? `Score: ${sub.score}/${viewingSubmissionsAssignment.totalPoints}` : "Needs Grading"}
                           </Badge>
                         </div>
-                        {sub.content && <p className="text-slate-600 text-[11px] italic">&quot;{sub.content}&quot;</p>}
+                        {sub.content && <p className="text-on-surface-variant text-[11px] italic">&quot;{sub.content}&quot;</p>}
                         {sub.feedback && (
-                          <div className="text-[11px] text-emerald-800 font-medium">
-                            Feedback: {sub.feedback}
+                          <div className="text-[11px] text-secondary font-medium flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[13px]">comment</span>
+                            <span>Feedback: {sub.feedback}</span>
                           </div>
                         )}
                       </div>
@@ -355,14 +378,15 @@ export default function FacultyAssignmentsPage() {
                           setGradeScore(sub.score || viewingSubmissionsAssignment.totalPoints);
                           setGradeFeedback(sub.feedback || "Good work.");
                         }}
-                        className="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-lg text-xs shadow-xs shrink-0 cursor-pointer transition-all btn-press"
+                        className="px-3.5 py-1.5 bg-primary hover:bg-primary-container text-on-primary font-semibold rounded-lg text-xs shadow-xs shrink-0 cursor-pointer transition-all flex items-center gap-1"
                       >
-                        {sub.status === "GRADED" ? "Edit Grade" : "Grade Submission"}
+                        <span className="material-symbols-outlined text-[14px]">edit_note</span>
+                        <span>{sub.status === "GRADED" ? "Edit Grade" : "Grade Submission"}</span>
                       </button>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-slate-500">No student submissions received yet.</div>
+                  <div className="text-center py-8 text-on-surface-variant">No student submissions received yet.</div>
                 )}
               </div>
             </div>
@@ -371,20 +395,23 @@ export default function FacultyAssignmentsPage() {
 
         {/* Grade Form Modal */}
         {gradingSubmission && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl text-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="text-sm font-bold text-slate-900">
-                  Grade: {gradingSubmission.student?.name}
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl max-w-md w-full p-6 shadow-xl text-xs space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
+                <h3 className="text-sm font-bold text-on-surface">
+                  Grade Submission: {gradingSubmission.student?.name}
                 </h3>
-                <button onClick={() => setGradingSubmission(null)} className="text-slate-400 hover:text-slate-700 font-bold text-xl cursor-pointer p-1">
-                  ×
+                <button
+                  onClick={() => setGradingSubmission(null)}
+                  className="text-outline hover:text-on-surface font-bold text-xl cursor-pointer p-1"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
                 </button>
               </div>
 
               <form onSubmit={handleSaveGrade} className="space-y-3.5">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
                     Score (out of {viewingSubmissionsAssignment?.totalPoints || 100})
                   </label>
                   <input
@@ -394,12 +421,12 @@ export default function FacultyAssignmentsPage() {
                     max={viewingSubmissionsAssignment?.totalPoints || 100}
                     value={gradeScore}
                     onChange={(e) => setGradeScore(Number(e.target.value))}
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary font-mono transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">
                     Instructor Feedback & Suggestions
                   </label>
                   <textarea
@@ -407,22 +434,22 @@ export default function FacultyAssignmentsPage() {
                     value={gradeFeedback}
                     onChange={(e) => setGradeFeedback(e.target.value)}
                     placeholder="Provide constructive academic feedback..."
-                    className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+                    className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
 
-                <div className="pt-3.5 border-t border-slate-100 flex justify-end space-x-2.5">
+                <div className="pt-3.5 border-t border-outline-variant/30 flex justify-end space-x-2.5">
                   <button
                     type="button"
                     onClick={() => setGradingSubmission(null)}
-                    className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container font-semibold cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={grading}
-                    className="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-semibold rounded-lg shadow-xs cursor-pointer transition-all btn-press"
+                    className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary font-semibold rounded-lg shadow-xs cursor-pointer transition-all disabled:opacity-50"
                   >
                     {grading ? "Saving..." : "Save Grade"}
                   </button>

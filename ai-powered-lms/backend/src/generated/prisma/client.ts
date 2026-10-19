@@ -47,6 +47,21 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model StudentRegistry
+ * 
+ */
+export type StudentRegistry = Prisma.StudentRegistryModel
+/**
+ * Model FacultyApplication
+ * 
+ */
+export type FacultyApplication = Prisma.FacultyApplicationModel
+/**
+ * Model EmailVerificationToken
+ * 
+ */
+export type EmailVerificationToken = Prisma.EmailVerificationTokenModel
+/**
  * Model Course
  * 
  */
@@ -106,6 +121,11 @@ export type AIConversation = Prisma.AIConversationModel
  * 
  */
 export type AIMessage = Prisma.AIMessageModel
+/**
+ * Model AIMessageRequest
+ * 
+ */
+export type AIMessageRequest = Prisma.AIMessageRequestModel
 /**
  * Model Document
  * 

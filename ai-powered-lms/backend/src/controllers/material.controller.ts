@@ -239,7 +239,7 @@ export async function listMaterialChunks(req: AuthRequest, res: Response, next: 
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
 
-    const chunkData = await getMaterialChunks(id, page, limit);
+    const chunkData = await getMaterialChunks(id, req.user.userId, req.user.role, page, limit);
 
     res.status(200).json({
       success: true,

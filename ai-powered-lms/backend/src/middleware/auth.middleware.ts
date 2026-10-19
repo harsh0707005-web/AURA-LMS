@@ -1,6 +1,7 @@
 import { Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AuthRequest, AuthPayload } from "../types/auth.types.js";
+import prisma from "../lib/prisma.js";
 
 export function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -12,11 +13,11 @@ export function getJwtSecret(): string {
   return secret;
 }
 
-export function authenticate(
+export async function authenticate(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   try {
     const authHeader = req.headers["authorization"];
 
@@ -40,23 +41,22 @@ export function authenticate(
 
     const secret = getJwtSecret();
 
-    jwt.verify(token, secret, (err, decoded) => {
-      if (err || !decoded) {
-        res.status(401).json({
-          success: false,
-          message: "Unauthorized: Invalid or expired access token",
-        });
-        return;
-      }
-
-      req.user = decoded as AuthPayload;
-      next();
-    });
+    let decoded: AuthPayload;
+    try {
+      decoded = jwt.verify(token, secret) as AuthPayload;
+      if (!decoded || typeof decoded.userId !== "string") throw new Error("Invalid payload");
+    } catch {
+      res.status(401).json({ success: false, message: "Unauthorized: Invalid or expired access token" });
+      return;
+    }
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId }, select: { id: true, email: true, role: true, status: true } });
+    if (!user || user.status !== "ACTIVE") {
+      res.status(401).json({ success: false, message: "Unauthorized: Account is not active" });
+      return;
+    }
+    req.user = { userId: user.id, email: user.email, role: user.role };
+    next();
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Authentication verification failed";
-    res.status(500).json({
-      success: false,
-      message,
-    });
+    next(error);
   }
 }

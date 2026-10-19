@@ -144,4 +144,5 @@ export interface CreateAIConversationInput {
 
 export interface PostAIMessageInput {
   content: string;
+  idempotencyKey?: string;
 }

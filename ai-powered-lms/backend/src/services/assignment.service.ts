@@ -146,11 +146,56 @@ export async function deleteAssignment(assignmentId: string, userId: string, rol
 export async function submitAssignment(
   assignmentId: string,
   studentId: string,
-  input: SubmitAssignmentInput
+  input: SubmitAssignmentInput,
+  callerRole?: string
 ) {
-  const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId } });
+  if (callerRole && callerRole !== "STUDENT") {
+    throw Object.assign(new Error("Forbidden: Only students can submit assignments"), { statusCode: 403 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { role: true },
+  });
+
+  if (!user || user.role !== "STUDENT") {
+    throw Object.assign(new Error("Forbidden: Only students can submit assignments"), { statusCode: 403 });
+  }
+
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { id: true, courseId: true },
+  });
+
   if (!assignment) {
     throw Object.assign(new Error("Assignment not found"), { statusCode: 404 });
+  }
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: {
+      studentId_courseId: {
+        studentId,
+        courseId: assignment.courseId,
+      },
+    },
+    select: { status: true },
+  });
+
+  if (!enrollment || enrollment.status !== "ACTIVE") {
+    throw Object.assign(
+      new Error("Forbidden: An active course enrollment is required to submit assignments"),
+      { statusCode: 403 }
+    );
+  }
+
+  const rawFileUrl = typeof input?.fileUrl === "string" ? input.fileUrl.trim() : null;
+  const rawContent = typeof input?.content === "string" ? input.content.trim() : null;
+
+  if (!rawFileUrl && !rawContent) {
+    throw Object.assign(
+      new Error("Assignment submission must include text content or a file URL"),
+      { statusCode: 400 }
+    );
   }
 
   const existing = await prisma.submission.findUnique({
@@ -161,8 +206,8 @@ export async function submitAssignment(
     return await prisma.submission.update({
       where: { id: existing.id },
       data: {
-        fileUrl: input.fileUrl || existing.fileUrl,
-        content: input.content || existing.content,
+        fileUrl: rawFileUrl !== null ? rawFileUrl : existing.fileUrl,
+        content: rawContent !== null ? rawContent : existing.content,
         submittedAt: new Date(),
         status: "SUBMITTED",
       },
@@ -173,14 +218,22 @@ export async function submitAssignment(
     data: {
       assignmentId,
       studentId,
-      fileUrl: input.fileUrl || `/submissions/${studentId}_${assignmentId}.pdf`,
-      content: input.content || "Assignment solution submitted online.",
+      fileUrl: rawFileUrl || null,
+      content: rawContent || "Assignment solution submitted online.",
       status: "SUBMITTED",
     },
   });
 }
 
 export async function getSubmissionsByAssignment(assignmentId: string, userId: string, role: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user || user.role !== role) {
+    throw Object.assign(new Error("Forbidden: Invalid user role credentials"), { statusCode: 403 });
+  }
+
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
     include: { course: true },
@@ -213,6 +266,14 @@ export async function getSubmissionsByAssignment(assignmentId: string, userId: s
 }
 
 export async function getSubmissionById(submissionId: string, userId: string, role: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user || user.role !== role) {
+    throw Object.assign(new Error("Forbidden: Invalid user role credentials"), { statusCode: 403 });
+  }
+
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
     include: {
@@ -254,6 +315,14 @@ export async function gradeSubmission(
   facultyId: string,
   role: string
 ) {
+  const user = await prisma.user.findUnique({
+    where: { id: facultyId },
+    select: { role: true },
+  });
+  if (!user || user.role !== role) {
+    throw Object.assign(new Error("Forbidden: Invalid user role credentials"), { statusCode: 403 });
+  }
+
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
     include: {

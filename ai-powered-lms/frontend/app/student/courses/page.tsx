@@ -22,10 +22,10 @@ export default function StudentCoursesPage() {
       try {
         setLoading(true);
         const enrolledRes = await apiRequest<Course[]>(`/students/${user.id}/courses`);
-        if (enrolledRes.success) setCourses(enrolledRes.data);
+        if (enrolledRes.success && enrolledRes.data) setCourses(enrolledRes.data);
 
         const allRes = await apiRequest<Course[]>("/courses");
-        if (allRes.success) setAllCourses(allRes.data);
+        if (allRes.success && allRes.data) setAllCourses(allRes.data);
       } catch (err) {
         console.error("Failed to load courses:", err);
       } finally {
@@ -44,39 +44,42 @@ export default function StudentCoursesPage() {
       // Refresh enrolled courses
       if (user) {
         const enrolledRes = await apiRequest<Course[]>(`/students/${user.id}/courses`);
-        if (enrolledRes.success) setCourses(enrolledRes.data);
+        if (enrolledRes.success && enrolledRes.data) setCourses(enrolledRes.data);
       }
-    } catch (err: any) {
-      alert(err.message || "Failed to enroll");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to enroll";
+      alert(msg);
     }
   };
 
   const displayedCourses = viewTab === "enrolled" ? courses : allCourses;
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="Enrolled Courses" subtitle="Computer Engineering Curriculum • Semester 8" />
 
-      <main className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full space-y-6">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
         {/* Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <div className="flex space-x-2">
+        <div className="flex items-center justify-between border-b border-surface-container-high pb-4">
+          <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => setViewTab("enrolled")}
-              className={`btn-press px-3.5 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors shadow-2xs ${
                 viewTab === "enrolled"
-                  ? "bg-blue-700 text-white shadow-xs"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  ? "bg-primary-container text-on-primary shadow-xs"
+                  : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-surface-container-high"
               }`}
             >
               My Enrolled Courses ({courses.length})
             </button>
             <button
+              type="button"
               onClick={() => setViewTab("all")}
-              className={`btn-press px-3.5 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors shadow-2xs ${
                 viewTab === "all"
-                  ? "bg-blue-700 text-white shadow-xs"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  ? "bg-primary-container text-on-primary shadow-xs"
+                  : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface border border-surface-container-high"
               }`}
             >
               All Department Courses ({allCourses.length})
@@ -86,9 +89,11 @@ export default function StudentCoursesPage() {
 
         {/* Courses Grid */}
         {loading ? (
-          <CardSkeleton count={6} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <CardSkeleton count={6} />
+          </div>
         ) : displayedCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayedCourses.map((course) => {
               const isEnrolled = courses.some((c) => c.id === course.id);
               return (
@@ -96,10 +101,12 @@ export default function StudentCoursesPage() {
                   <CourseCard course={course} baseHref="/student/courses" />
                   {viewTab === "all" && !isEnrolled && (
                     <button
+                      type="button"
                       onClick={() => handleEnroll(course.id)}
-                      className="btn-press mt-2 w-full py-1.5 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white rounded-md transition-colors cursor-pointer shadow-2xs"
+                      className="mt-2.5 w-full py-2 text-xs font-semibold bg-secondary text-on-secondary hover:opacity-90 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
                     >
-                      + Enroll in Course
+                      <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                      <span>Enroll in Course</span>
                     </button>
                   )}
                 </div>
@@ -108,10 +115,14 @@ export default function StudentCoursesPage() {
           </div>
         ) : (
           <EmptyState
-            title="No Courses Found"
-            description="You are not enrolled in any courses yet."
-            actionText="Browse Available Courses"
-            onAction={() => setViewTab("all")}
+            title={viewTab === "enrolled" ? "No Courses Enrolled" : "No Courses Available"}
+            description={
+              viewTab === "enrolled"
+                ? "You have not enrolled in any courses yet. Browse all department courses to enroll."
+                : "No course offerings were found in the institutional directory."
+            }
+            actionText={viewTab === "enrolled" ? "Browse Department Courses" : undefined}
+            onAction={viewTab === "enrolled" ? () => setViewTab("all") : undefined}
           />
         )}
       </main>

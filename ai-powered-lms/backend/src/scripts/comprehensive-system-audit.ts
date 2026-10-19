@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import prisma from "../lib/prisma.js";
 
 const BASE_URL = "http://localhost:5000/api";
@@ -255,13 +256,15 @@ async function runFullAudit() {
   // Test 2.2: Post grounded course question to AI Tutor
   try {
     const questionText = "How does Raft elect a leader and prevent split votes?";
+    const idempotencyKey = randomUUID();
     const msgRes = await fetch(`${BASE_URL}/ai/conversations/${testConversationId}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${demoStudentToken}`,
+        "Idempotency-Key": idempotencyKey,
       },
-      body: JSON.stringify({ content: questionText }),
+      body: JSON.stringify({ content: questionText, idempotencyKey }),
     });
     const msgData = await msgRes.json();
     if (
@@ -289,13 +292,15 @@ async function runFullAudit() {
   // Test 2.3: Follow-up question in the same conversation
   try {
     const followUpText = "What timeout duration is used for randomized timeouts?";
+    const idempotencyKey = randomUUID();
     const msgRes = await fetch(`${BASE_URL}/ai/conversations/${testConversationId}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${demoStudentToken}`,
+        "Idempotency-Key": idempotencyKey,
       },
-      body: JSON.stringify({ content: followUpText }),
+      body: JSON.stringify({ content: followUpText, idempotencyKey }),
     });
     const msgData = await msgRes.json();
     if (msgRes.status === 201 && msgData.success && msgData.data?.assistantMessage?.content) {
@@ -326,6 +331,7 @@ async function runFullAudit() {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${demoStudentToken}`,
+        "Idempotency-Key": randomUUID(),
       },
       body: JSON.stringify({ content: "What is the recipe for chocolate cake?" }),
     });

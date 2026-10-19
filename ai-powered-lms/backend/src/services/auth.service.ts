@@ -2,37 +2,22 @@ import bcrypt from "bcrypt";
 import jwt, { SignOptions } from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
 import {
-  RegisterInput,
   LoginInput,
   UpdateProfileInput,
   UserResponse,
-  Role,
 } from "../types/auth.types.js";
 import { getJwtSecret } from "../middleware/auth.middleware.js";
+import { User } from "../generated/prisma/client.js";
+import { objectInput, registrationError } from "./registration.service.js";
+export { registerUser, verifyStudentEmail, resendVerification } from "./registration.service.js";
 
-const BCRYPT_SALT_ROUNDS = 10;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-interface DatabaseUser {
-  id: string;
-  name: string;
-  email: string;
-  passwordHash: string;
-  role: Role;
-  department: string | null;
-  enrollmentNo: string | null;
-  employeeId: string | null;
-  avatarUrl: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export function sanitizeUser(user: DatabaseUser): UserResponse {
+export function sanitizeUser(user: User): UserResponse {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
+    status: user.status,
     department: user.department,
     enrollmentNo: user.enrollmentNo,
     employeeId: user.employeeId,
@@ -42,63 +27,12 @@ export function sanitizeUser(user: DatabaseUser): UserResponse {
   };
 }
 
-export async function registerUser(input: RegisterInput): Promise<UserResponse> {
-  const { name, email, password, role, department, enrollmentNo, employeeId } = input;
-
-  if (!name || name.trim().length === 0) {
-    throw Object.assign(new Error("Full name is required"), { statusCode: 400 });
-  }
-
-  if (!email || !EMAIL_REGEX.test(email.trim())) {
-    throw Object.assign(new Error("Valid institutional email address is required"), { statusCode: 400 });
-  }
-
-  if (!password || password.length < 8) {
-    throw Object.assign(new Error("Password must be at least 8 characters long"), { statusCode: 400 });
-  }
-
-  // Security Rule: Disallow public registration as ADMIN
-  if (role === "ADMIN") {
-    throw Object.assign(
-      new Error("Public registration for Administrator role is strictly prohibited. Admin accounts must be created by existing admins or system seed."),
-      { statusCode: 400 }
-    );
-  }
-
-  const assignedRole: Role = role === "FACULTY" ? "FACULTY" : "STUDENT";
-  const normalizedEmail = email.trim().toLowerCase();
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-  });
-
-  if (existingUser) {
-    throw Object.assign(new Error("An account with this email address already exists"), { statusCode: 409 });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
-
-  const newUser = await prisma.user.create({
-    data: {
-      name: name.trim(),
-      email: normalizedEmail,
-      passwordHash: hashedPassword,
-      role: assignedRole,
-      department: department?.trim() || "Computer Engineering",
-      enrollmentNo: assignedRole === "STUDENT" ? enrollmentNo?.trim() || null : null,
-      employeeId: assignedRole === "FACULTY" ? employeeId?.trim() || null : null,
-    },
-  });
-
-  return sanitizeUser(newUser);
-}
-
 export async function loginUser(
   input: LoginInput
 ): Promise<{ user: UserResponse; token: string }> {
-  const { email, password } = input;
+  const { email, password } = objectInput(input);
 
-  if (!email || !password) {
+  if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
     throw Object.assign(new Error("Institutional email and password are required"), { statusCode: 400 });
   }
 
@@ -117,6 +51,8 @@ export async function loginUser(
   if (!isPasswordValid) {
     throw Object.assign(new Error("Invalid email or password"), { statusCode: 401 });
   }
+
+  if (user.status !== "ACTIVE") throw registrationError("Account is not active. Email verification or institutional approval may be required.", 403);
 
   const secret = getJwtSecret();
   const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
@@ -154,7 +90,8 @@ export async function updateUserProfile(
   userId: string,
   input: UpdateProfileInput
 ): Promise<UserResponse> {
-  const { name, department, enrollmentNo, employeeId, avatarUrl } = input;
+  assertSafeProfileUpdate(input);
+  const { name, department, avatarUrl } = input;
 
   const dataToUpdate: {
     name?: string;
@@ -166,8 +103,6 @@ export async function updateUserProfile(
 
   if (name !== undefined) dataToUpdate.name = name.trim();
   if (department !== undefined) dataToUpdate.department = department.trim();
-  if (enrollmentNo !== undefined) dataToUpdate.enrollmentNo = enrollmentNo.trim();
-  if (employeeId !== undefined) dataToUpdate.employeeId = employeeId.trim();
   if (avatarUrl !== undefined) dataToUpdate.avatarUrl = avatarUrl.trim();
 
   const updatedUser = await prisma.user.update({
@@ -176,4 +111,12 @@ export async function updateUserProfile(
   });
 
   return sanitizeUser(updatedUser);
+}
+
+export function assertSafeProfileUpdate(input: unknown) {
+  const body = objectInput(input);
+  if (["role", "status", "email", "enrollmentNo", "employeeId", "studentRegistryId"].some(key => key in body)) throw registrationError("Role, status and institutional identity fields cannot be changed through profile updates");
+  for (const key of Object.keys(body)) {
+    if (!["name", "department", "avatarUrl"].includes(key) || typeof body[key] !== "string" || (body[key] as string).length > 2000) throw registrationError("Invalid profile update");
+  }
 }

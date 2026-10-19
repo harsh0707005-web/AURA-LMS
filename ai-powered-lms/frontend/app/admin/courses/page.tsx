@@ -13,7 +13,7 @@ export default function AdminCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const loadCourses = async () => {
+  const loadCourses = React.useCallback(async () => {
     try {
       setLoading(true);
       const res = await apiRequest<Course[]>("/courses");
@@ -25,19 +25,20 @@ export default function AdminCoursesPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadCourses();
   }, []);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadCourses(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadCourses]);
+
   const handleDeleteCourse = async (courseId: string) => {
-    if (!confirm("Are you sure you want to delete this course and all associated records?")) return;
+    if (!confirm("Are you sure you want to permanently delete this course and all associated records?")) return;
     try {
       await apiRequest(`/courses/${courseId}`, { method: "DELETE" });
       loadCourses();
-    } catch (err: any) {
-      alert(err.message || "Failed to delete course");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete course");
     }
   };
 
@@ -52,45 +53,48 @@ export default function AdminCoursesPage() {
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-surface min-h-screen text-on-surface">
       <Topbar title="University Course Catalog" subtitle="Academic Offerings & Faculty Assignments" />
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6 animate-fade-in">
+      <main className="flex-1 p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
         {/* Controls Bar */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4.5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4.5 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="relative">
+            <div className="relative w-80">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">
+                search
+              </span>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by code, course title, instructor..."
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-900 w-80 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors shadow-2xs"
+                placeholder="Search code, course title, instructor..."
+                className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg pl-9 pr-8 py-2 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface text-xs font-bold"
                 >
-                  ✕
+                  <span className="material-symbols-outlined text-[16px]">close</span>
                 </button>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500 font-medium">
-              Showing <strong className="text-slate-900 font-mono">{filteredCourses.length}</strong> of <strong className="text-slate-900 font-mono">{courses.length}</strong> Offerings
+            <span className="text-xs text-on-surface-variant font-medium">
+              Showing <strong className="text-on-surface font-mono">{filteredCourses.length}</strong> of <strong className="text-on-surface font-mono">{courses.length}</strong> Offerings
             </span>
           </div>
         </div>
 
         {/* Courses Table */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
-          <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+        <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3.5 border-b border-outline-variant/30">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Registered Department Courses ({courses.length})</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Active curriculum offerings across all semesters</p>
+              <h3 className="text-sm font-bold text-on-surface">Registered Department Courses ({courses.length})</h3>
+              <p className="text-[11px] text-on-surface-variant mt-0.5">Active curriculum offerings across all semesters</p>
             </div>
             <Badge variant="default">Curriculum Archive</Badge>
           </div>
@@ -99,9 +103,9 @@ export default function AdminCoursesPage() {
             <TableSkeleton rows={6} cols={8} />
           ) : filteredCourses.length > 0 ? (
             <div className="overflow-x-auto text-xs">
-              <table className="w-full text-left academic-table">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+                  <tr className="border-b border-outline-variant/30 text-outline uppercase text-[10px] tracking-wider font-mono">
                     <th className="pb-2.5 font-bold">Code</th>
                     <th className="pb-2.5 font-bold">Course Title</th>
                     <th className="pb-2.5 font-bold">Credits</th>
@@ -112,38 +116,41 @@ export default function AdminCoursesPage() {
                     <th className="pb-2.5 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-outline-variant/20">
                   {filteredCourses.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3 font-bold text-slate-900">
-                        <Badge variant="default">{c.code}</Badge>
+                    <tr key={c.id} className="hover:bg-surface-container-low/70 transition-colors">
+                      <td className="py-3 font-bold text-primary">
+                        <span className="px-2.5 py-0.5 rounded-md bg-surface-container-high text-primary font-bold border border-outline-variant/40 text-[10px] tracking-wider uppercase font-mono">
+                          {c.code}
+                        </span>
                       </td>
-                      <td className="py-3 font-semibold text-slate-900">{c.title}</td>
-                      <td className="py-3 text-slate-600 font-medium">{c.credits} Credits</td>
-                      <td className="py-3 text-slate-600">Semester {c.semester}</td>
-                      <td className="py-3 text-slate-700">
+                      <td className="py-3 font-semibold text-on-surface">{c.title}</td>
+                      <td className="py-3 text-on-surface-variant font-mono text-[11px]">{c.credits} Credits</td>
+                      <td className="py-3 text-on-surface-variant font-mono text-[11px]">Semester {c.semester}</td>
+                      <td className="py-3 text-on-surface">
                         {c.faculty?.name ? (
-                          <span className="font-medium text-slate-900">{c.faculty.name}</span>
+                          <span className="font-medium text-on-surface">{c.faculty.name}</span>
                         ) : (
-                          <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] border border-amber-200">Unassigned</span>
+                          <span className="text-outline italic">Unassigned</span>
                         )}
                       </td>
                       <td className="py-3 text-center">
-                        <span className="font-semibold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                        <span className="font-mono font-bold text-primary bg-surface-container px-2.5 py-0.5 rounded-full text-[11px]">
                           {c._count?.enrollments || 0}
                         </span>
                       </td>
                       <td className="py-3 text-center">
-                        <span className="font-semibold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                        <span className="font-mono font-bold text-on-surface-variant bg-surface-container px-2.5 py-0.5 rounded-full text-[11px]">
                           {c._count?.materials || 0}
                         </span>
                       </td>
                       <td className="py-3 text-right">
                         <button
                           onClick={() => handleDeleteCourse(c.id)}
-                          className="px-3 py-1 text-xs text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-md font-semibold cursor-pointer transition-all btn-press"
+                          className="px-2.5 py-1 text-xs text-error hover:bg-error-container/40 border border-error/30 rounded-lg font-semibold cursor-pointer transition-all inline-flex items-center gap-1"
                         >
-                          Delete
+                          <span className="material-symbols-outlined text-[13px]">delete</span>
+                          <span>Delete</span>
                         </button>
                       </td>
                     </tr>

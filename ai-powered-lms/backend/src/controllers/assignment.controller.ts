@@ -110,7 +110,7 @@ export async function submit(req: AuthRequest, res: Response, next: NextFunction
     }
 
     const id = getParam(req.params.id);
-    const submission = await submitAssignment(id, req.user.userId, req.body);
+    const submission = await submitAssignment(id, req.user.userId, req.body, req.user.role);
 
     res.status(201).json({
       success: true,

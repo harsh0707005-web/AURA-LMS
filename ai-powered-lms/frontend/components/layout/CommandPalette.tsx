@@ -35,6 +35,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     if (role === "STUDENT") {
       items.push(
         { id: "s-dash", label: "Dashboard", description: "Overview of courses, metrics and tasks", href: "/student/dashboard", icon: "dashboard", category: "Navigation" },
+        { id: "s-announcements", label: "Announcements", description: "Course and institutional updates", href: "/student/announcements", icon: "campaign", category: "Navigation" },
         { id: "s-courses", label: "My Courses", description: "Enrolled courses and modules", href: "/student/courses", icon: "school", category: "Navigation" },
         { id: "s-materials", label: "Course Materials", description: "Lecture notes and syllabus documents", href: "/student/materials", icon: "menu_book", category: "Navigation" },
         { id: "s-tutor", label: "AI Course Tutor", description: "Ask questions grounded in syllabus PDFs", href: "/student/ai-tutor", icon: "smart_toy", category: "AI Features" },
@@ -47,6 +48,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     } else if (role === "FACULTY") {
       items.push(
         { id: "f-dash", label: "Faculty Dashboard", description: "Instructional console and metrics", href: "/faculty/dashboard", icon: "dashboard", category: "Navigation" },
+        { id: "f-announcements", label: "Announcements", description: "Publish updates to course cohorts", href: "/faculty/announcements", icon: "campaign", category: "Navigation" },
         { id: "f-courses", label: "Courses Management", description: "Course offerings and syllabus", href: "/faculty/courses", icon: "school", category: "Navigation" },
         { id: "f-materials", label: "Course Materials", description: "Lecture repository and RAG indexing", href: "/faculty/materials", icon: "menu_book", category: "Navigation" },
         { id: "f-quizzes", label: "Quizzes & Tests", description: "Create and publish topic quizzes", href: "/faculty/quizzes", icon: "quiz", category: "Assessments" },
@@ -58,6 +60,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     } else if (role === "ADMIN") {
       items.push(
         { id: "a-dash", label: "System Console", description: "Platform health and high-level stats", href: "/admin/dashboard", icon: "dashboard", category: "Navigation" },
+        { id: "a-announcements", label: "Announcements", description: "Publish institutional or course updates", href: "/admin/announcements", icon: "campaign", category: "Navigation" },
         { id: "a-users", label: "User Accounts", description: "Manage university accounts and roles", href: "/admin/users", icon: "manage_accounts", category: "Directory" },
         { id: "a-students", label: "Student Directory", description: "Full student enrollment registry", href: "/admin/students", icon: "groups", category: "Directory" },
         { id: "a-faculty", label: "Faculty Directory", description: "Academic instructors registry", href: "/admin/faculty", icon: "badge", category: "Directory" },

@@ -9,6 +9,7 @@ import { registerUser, verifyStudentEmail } from "../services/registration.servi
 import { assertSafeProfileUpdate, loginUser } from "../services/auth.service.js";
 import { importStudentRegistry, parseRegistryImport, reviewFacultyApplication } from "../services/institution.service.js";
 import { authenticate } from "../middleware/auth.middleware.js";
+import { authorizeRoles } from "../middleware/role.middleware.js";
 
 const now = new Date();
 const baseUser = { id: "student-1", name: "Student", email: "student@example.edu", passwordHash: "", role: "STUDENT", status: "PENDING_EMAIL", department: "Computer Engineering", enrollmentNo: "BE-2024-CS-001", employeeId: null, avatarUrl: null, createdAt: now, updatedAt: now } as any;
@@ -65,17 +66,31 @@ test("login rejects every non-active account and signs the database role", { con
   const hash = await bcrypt.hash("Password123", 10);
   let user: any = { ...baseUser, passwordHash: hash };
   replace(t, prisma.user, "findUnique", async () => user);
+  replace(t, (prisma as any).refreshSession, "create", async ({ data }: any) => data);
   await assert.rejects(loginUser({ email: user.email, password: "Password123" }), { statusCode: 403 });
   user = { ...user, status: "ACTIVE", role: "STUDENT" };
   const result = await loginUser({ email: user.email, password: "Password123" });
   assert.equal(result.user.role, "STUDENT");
   assert.equal((jwt.decode(result.token) as any).role, "STUDENT");
+  await assert.rejects(loginUser({ email: user.email, password: "Password123", portalRole: "ADMIN" }), { statusCode: 403 });
 });
 
 test("profile and generic admin user updates cannot mutate authorization fields", () => {
   assert.throws(() => assertSafeProfileUpdate({ name: "Changed", role: "ADMIN" }), { statusCode: 400 });
   assert.throws(() => assertSafeProfileUpdate({ status: "ACTIVE" }), { statusCode: 400 });
   assert.throws(() => assertSafeProfileUpdate({ enrollmentNo: "BE-1" }), { statusCode: 400 });
+});
+
+test("student sessions cannot pass the admin authorization middleware", () => {
+  const response: any = {
+    statusCode: 200,
+    status(code: number) { this.statusCode = code; return this; },
+    json() { return this; },
+  };
+  let nextCalled = false;
+  authorizeRoles("ADMIN")({ user: { userId: "student-1", email: "student@example.edu", role: "STUDENT" } } as any, response, () => { nextCalled = true; });
+  assert.equal(response.statusCode, 403);
+  assert.equal(nextCalled, false);
 });
 
 test("email verification is expiring, single-use, transactional, and claims the registry", { concurrency: false }, async (t) => {

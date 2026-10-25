@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Material, MaterialProgress } from "@/lib/types";
-import { getAuthToken } from "@/lib/auth";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, authenticatedFetch } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -79,11 +78,6 @@ export default function PDFViewerModal({
         setLoading(true);
         setError(null);
 
-        const token = getAuthToken();
-        if (!token) {
-          throw new Error("Authentication session missing. Please log in.");
-        }
-
         // Fetch latest saved progress
         const progRes = await apiRequest<MaterialProgress>(`/materials/${material.id}/progress`);
         if (progRes.success && progRes.data) {
@@ -100,9 +94,7 @@ export default function PDFViewerModal({
         }
 
         // Fetch PDF binary stream
-        const fileRes = await fetch(`${API_BASE}/materials/${material.id}/file`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const fileRes = await authenticatedFetch(`${API_BASE}/materials/${material.id}/file`);
 
         if (!fileRes.ok) {
           const errData = await fileRes.json().catch(() => ({}));

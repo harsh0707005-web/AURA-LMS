@@ -27,6 +27,8 @@ export interface RegisterInput {
 export interface LoginInput {
   email: string;
   password: string;
+  /** Optional portal selection from the login UI; never used as the authorization source. */
+  portalRole?: Role;
 }
 
 export interface UpdateProfileInput {

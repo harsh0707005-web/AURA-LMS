@@ -68,7 +68,7 @@ export default function RegisterPage() {
       <div className="max-w-2xl w-full bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shadow-xl p-6 sm:p-10 animate-fade-in">
         <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center space-x-2.5 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center text-on-primary shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-primary to-primary-container flex items-center justify-center text-on-primary shadow-sm">
               <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
             </div>
             <span className="text-xl font-bold tracking-tight text-on-surface">AURA LMS</span>

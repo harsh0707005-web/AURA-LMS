@@ -3,6 +3,7 @@ import prisma from "../lib/prisma.js";
 import { CreateAIConversationInput, PostAIMessageInput } from "../types/academic.types.js";
 import { ragService } from "./ai/rag.service.js";
 import { studentContextService } from "./ai/student-context.service.js";
+import { resolveWebsiteContext } from "./ai/website-context.service.js";
 
 const MAX_MESSAGE_CHARS = 8000;
 const MAX_HISTORY_CHARS = 6000;
@@ -252,6 +253,53 @@ export async function postMessageToConversation(
         semester: 8,
       };
 
+    // Handle greetings and authorized website questions locally. These do not
+    // need embeddings or model generation and must never be answered from
+    // arbitrary user-provided IDs or model-selected database fields.
+    const websiteContext = await resolveWebsiteContext(content, userId, role);
+    if (websiteContext) {
+      const elapsed = elapsedMs(requestStartedAt);
+      const persisted = await persistTutorAnswer({
+        conversationId,
+        requestId: claim.request.id,
+        answer: websiteContext.answer,
+        sources: [],
+        suggestedFollowUps: websiteContext.suggestedFollowUps,
+        deadlineAt,
+      });
+      return {
+        userMessage,
+        assistantMessage: persisted.assistantMessage,
+        request: publicRequest(persisted.completedRequest),
+        timing: {
+          embeddingMs: 0,
+          vectorSearchMs: 0,
+          retrievalMs: 0,
+          rawCandidateCount: 0,
+          acceptedCandidateCount: 0,
+          minSimilarity: DEFAULT_RAG_THRESHOLD,
+          retrievalStatus: "no-course-context",
+          contextAssemblyMs: 0,
+          generationMs: 0,
+          totalRoundTripMs: elapsed,
+          serverTotalMs: elapsed,
+          personalizationAvailable: false,
+          personalizationIncluded: false,
+          promptChars: 0,
+          outputChars: websiteContext.answer.length,
+          providerAttemptCount: 0,
+          fallbackUsed: false,
+          retryCount: 0,
+          backoffMs: 0,
+        },
+        modelUsed: "website-context",
+        modelRequested: "website-context",
+        providerUsed: "local",
+        providerAttempts: [],
+        replayed: false,
+      };
+    }
+
     // 4. Retrieve sanitized student educational profile (zero PII, weak topics, progress, recs)
     const profileStartedAt = performance.now();
     const studentProfile = role === "STUDENT"
@@ -275,7 +323,8 @@ export async function postMessageToConversation(
     if (conversation.courseId) {
       const retrievalStartedAt = performance.now();
       try {
-        const retrievalResult = await ragService.retrieveRelevantChunksWithTiming(content, conversation.courseId);
+        const retrievalQuery = buildTutorRetrievalQuery(content, conversationHistory);
+        const retrievalResult = await ragService.retrieveRelevantChunksWithTiming(retrievalQuery, conversation.courseId);
       retrievedChunks = retrievalResult.chunks;
       retrievalTiming = {
         embeddingMs: retrievalResult.embeddingMs,
@@ -383,29 +432,13 @@ export async function postMessageToConversation(
     backoffMs: timing.backoffMs,
   });
 
-    const persisted = await prisma.$transaction(async (tx) => {
-      const current = await tx.aIMessageRequest.findUnique({ where: { id: claim.request.id } });
-      if (!current || current.status !== "PROCESSING") {
-        throw Object.assign(new Error("The AI message request is no longer processing"), { statusCode: 409 });
-      }
-      ensureTimeRemaining(deadlineAt);
-      const assistantMessage = await tx.aIMessage.create({
-        data: {
-          conversationId,
-          sender: "assistant",
-          content: ragResult.answer,
-          sources: ragResult.sources,
-          suggestedFollowUps: ragResult.suggestedFollowUps,
-        },
-      });
-      ensureTimeRemaining(deadlineAt);
-      await tx.aIConversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } });
-      ensureTimeRemaining(deadlineAt);
-      const completedRequest = await tx.aIMessageRequest.update({
-        where: { id: claim.request.id },
-        data: { status: "COMPLETED", assistantMessageId: assistantMessage.id, completedAt: new Date(), errorCode: null, errorMessage: null },
-      });
-      return { assistantMessage, completedRequest };
+    const persisted = await persistTutorAnswer({
+      conversationId,
+      requestId: claim.request.id,
+      answer: ragResult.answer,
+      sources: ragResult.sources,
+      suggestedFollowUps: ragResult.suggestedFollowUps,
+      deadlineAt,
     });
 
     return {
@@ -430,6 +463,40 @@ export async function postMessageToConversation(
       cause: error,
     });
   }
+}
+
+async function persistTutorAnswer(input: {
+  conversationId: string;
+  requestId: string;
+  answer: string;
+  sources: any[];
+  suggestedFollowUps: string[];
+  deadlineAt: Date;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.aIMessageRequest.findUnique({ where: { id: input.requestId } });
+    if (!current || current.status !== "PROCESSING") {
+      throw Object.assign(new Error("The AI message request is no longer processing"), { statusCode: 409 });
+    }
+    ensureTimeRemaining(input.deadlineAt);
+    const assistantMessage = await tx.aIMessage.create({
+      data: {
+        conversationId: input.conversationId,
+        sender: "assistant",
+        content: input.answer,
+        sources: input.sources,
+        suggestedFollowUps: input.suggestedFollowUps,
+      },
+    });
+    ensureTimeRemaining(input.deadlineAt);
+    await tx.aIConversation.update({ where: { id: input.conversationId }, data: { updatedAt: new Date() } });
+    ensureTimeRemaining(input.deadlineAt);
+    const completedRequest = await tx.aIMessageRequest.update({
+      where: { id: input.requestId },
+      data: { status: "COMPLETED", assistantMessageId: assistantMessage.id, completedAt: new Date(), errorCode: null, errorMessage: null },
+    });
+    return { assistantMessage, completedRequest };
+  });
 }
 
 type MessageRequestRecord = any;
@@ -564,6 +631,35 @@ function boundConversationHistory(
   }
 
   return bounded;
+}
+
+/**
+ * Resolve short follow-up references before semantic retrieval. The current
+ * question remains first and authoritative; recent student questions only
+ * supply missing topic terms for queries such as "example of Unit 2?".
+ */
+export function buildTutorRetrievalQuery(
+  question: string,
+  conversationHistory: Array<{ sender: string; content: string }>
+): string {
+  const normalizedQuestion = question.slice(0, MAX_MESSAGE_CHARS).trim();
+  const needsHistory = /\b(this|that|it|these|those|above|previous|earlier|unit\s*\d+|step[-\s]?by[-\s]?step|example|further|continue)\b/i.test(
+    normalizedQuestion
+  );
+  if (!needsHistory) return normalizedQuestion;
+
+  const priorStudentQuestions = conversationHistory
+    .filter((message) => message.sender === "user")
+    .slice(-2)
+    .map((message) => message.content.trim())
+    .filter(Boolean);
+  if (priorStudentQuestions.length === 0) return normalizedQuestion;
+
+  const historyBlock = priorStudentQuestions.join("\n");
+  const availableHistoryChars = Math.max(0, MAX_MESSAGE_CHARS - normalizedQuestion.length - 34);
+  if (availableHistoryChars === 0) return normalizedQuestion;
+
+  return `${normalizedQuestion}\nRelated prior student questions:\n${historyBlock.slice(0, availableHistoryChars)}`;
 }
 
 function safeErrorMessage(error: any): string {

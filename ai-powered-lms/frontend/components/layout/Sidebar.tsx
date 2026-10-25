@@ -22,6 +22,7 @@ const STUDENT_GROUPS: NavGroup[] = [
     title: "CORE",
     items: [
       { label: "Dashboard", href: "/student/dashboard", icon: "dashboard" },
+      { label: "Announcements", href: "/student/announcements", icon: "campaign" },
       { label: "My Courses", href: "/student/courses", icon: "school" },
       { label: "Materials", href: "/student/materials", icon: "menu_book" },
     ],
@@ -54,6 +55,7 @@ const FACULTY_GROUPS: NavGroup[] = [
     title: "CORE",
     items: [
       { label: "Dashboard", href: "/faculty/dashboard", icon: "dashboard" },
+      { label: "Announcements", href: "/faculty/announcements", icon: "campaign" },
       { label: "Courses Management", href: "/faculty/courses", icon: "school" },
       { label: "Course Materials", href: "/faculty/materials", icon: "menu_book" },
     ],
@@ -85,6 +87,7 @@ const ADMIN_GROUPS: NavGroup[] = [
     title: "SYSTEM",
     items: [
       { label: "System Console", href: "/admin/dashboard", icon: "dashboard" },
+      { label: "Announcements", href: "/admin/announcements", icon: "campaign" },
     ],
   },
   {
@@ -198,7 +201,7 @@ export default function Sidebar({
             }`}
             title="AURA LMS Platform"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center text-on-primary shadow-xs group-hover:opacity-90 transition-opacity shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-primary to-primary-container flex items-center justify-center text-on-primary shadow-xs group-hover:opacity-90 transition-opacity shrink-0">
               <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
             </div>
             {!showCompact && (

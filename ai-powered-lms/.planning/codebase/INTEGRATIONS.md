@@ -112,21 +112,21 @@ LIMIT $3;
 | `JWT_SECRET` | **Yes** | — | Secret key used for signing and verifying HS256 JWTs |
 | `GEMINI_API_KEY` | **Yes** | — | Google AI Studio API key for embedding and completion |
 | `GEMINI_EMBEDDING_MODEL` | No | `gemini-embedding-001` | 3072-dim text embedding model |
-| `GEMINI_GENERATION_MODEL` | No | `gemini-3.7-flash` | Primary academic tutor generation model |
+| `GEMINI_GENERATION_MODEL` | No | `gemini-3.7-flash` | Primary academic tutor generation model; Gemini model fallbacks remain first |
 | `GEMINI_FALLBACK_MODELS` | No | Built-in fallback list | Ordered comma-separated fallback models |
 | `GEMINI_THINKING_BUDGET` | No | `0` | Thinking budget for low-latency academic responses |
 | `GEMINI_COMPLEX_THINKING_BUDGET` | No | `1024` | Thinking budget for mathematical proofs and derivations |
 | `GEMINI_REQUEST_TIMEOUT_MS` | No | `45000` | Per-network-attempt Gemini timeout |
 | `GEMINI_EMBEDDING_BUDGET_MS` | No | `30000` | Total embedding retry budget |
-| `GEMINI_GENERATION_BUDGET_MS` | No | `90000` | Normal generation/fallback budget |
+| `GEMINI_GENERATION_BUDGET_MS` | No | `90000` | Normal Gemini generation/fallback budget, including optional Groq failover time |
 | `GEMINI_COMPLEX_GENERATION_BUDGET_MS` | No | `120000` | Complex generation budget |
 | `GEMINI_MAX_ATTEMPTS_PER_MODEL` | No | `1` | Maximum generation attempts per model |
 | `GEMINI_MAX_TOTAL_ATTEMPTS` | No | `4` | Maximum generation attempts across fallback models |
 | `GEMINI_TUTOR_MAX_OUTPUT_TOKENS` | No | `1200` | Normal tutor output cap |
 | `GEMINI_TUTOR_COMPLEX_MAX_OUTPUT_TOKENS` | No | `1600` | Complex tutor output cap |
 | `AI_MESSAGE_WORKFLOW_TIMEOUT_MS` | No | `120000` | Durable AI-message workflow deadline |
-| `DEFAULT_LLM_PROVIDER` | No | `gemini` | Active generation provider; Groq is opt-in |
-| `GROQ_API_KEY` | No | Unset | Optional Groq credential; does not change Gemini embeddings |
+| `DEFAULT_LLM_PROVIDER` | No | `gemini` | Active generation provider; Gemini remains primary when selected and Groq is opt-in failover |
+| `GROQ_API_KEY` | No | Unset | Optional Groq credential for generation-only failover; does not change Gemini embeddings |
 | `GROQ_MODEL` | No | `openai/gpt-oss-20b` | Optional Groq completion model |
 | `GROQ_API_URL` | No | Groq chat-completions endpoint | Optional Groq endpoint override |
 | `GROQ_TIMEOUT_MS` | No | `30000` | Per-attempt Groq timeout |

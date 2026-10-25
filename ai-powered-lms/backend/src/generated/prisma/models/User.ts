@@ -250,6 +250,10 @@ export type UserWhereInput = {
   facultyApplication?: Prisma.XOR<Prisma.FacultyApplicationNullableScalarRelationFilter, Prisma.FacultyApplicationWhereInput> | null
   reviewedApplications?: Prisma.FacultyApplicationListRelationFilter
   emailVerificationTokens?: Prisma.EmailVerificationTokenListRelationFilter
+  passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
+  refreshSessions?: Prisma.RefreshSessionListRelationFilter
+  announcementsAuthored?: Prisma.AnnouncementListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
   aiMessageRequests?: Prisma.AIMessageRequestListRelationFilter
   aiConversations?: Prisma.AIConversationListRelationFilter
   coursesTaught?: Prisma.CourseListRelationFilter
@@ -279,6 +283,10 @@ export type UserOrderByWithRelationInput = {
   facultyApplication?: Prisma.FacultyApplicationOrderByWithRelationInput
   reviewedApplications?: Prisma.FacultyApplicationOrderByRelationAggregateInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenOrderByRelationAggregateInput
+  passwordResetTokens?: Prisma.PasswordResetTokenOrderByRelationAggregateInput
+  refreshSessions?: Prisma.RefreshSessionOrderByRelationAggregateInput
+  announcementsAuthored?: Prisma.AnnouncementOrderByRelationAggregateInput
+  notifications?: Prisma.NotificationOrderByRelationAggregateInput
   aiMessageRequests?: Prisma.AIMessageRequestOrderByRelationAggregateInput
   aiConversations?: Prisma.AIConversationOrderByRelationAggregateInput
   coursesTaught?: Prisma.CourseOrderByRelationAggregateInput
@@ -311,6 +319,10 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   facultyApplication?: Prisma.XOR<Prisma.FacultyApplicationNullableScalarRelationFilter, Prisma.FacultyApplicationWhereInput> | null
   reviewedApplications?: Prisma.FacultyApplicationListRelationFilter
   emailVerificationTokens?: Prisma.EmailVerificationTokenListRelationFilter
+  passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
+  refreshSessions?: Prisma.RefreshSessionListRelationFilter
+  announcementsAuthored?: Prisma.AnnouncementListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
   aiMessageRequests?: Prisma.AIMessageRequestListRelationFilter
   aiConversations?: Prisma.AIConversationListRelationFilter
   coursesTaught?: Prisma.CourseListRelationFilter
@@ -377,6 +389,10 @@ export type UserCreateInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -405,6 +421,10 @@ export type UserUncheckedCreateInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -433,6 +453,10 @@ export type UserUpdateInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -461,6 +485,10 @@ export type UserUncheckedUpdateInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -673,6 +701,64 @@ export type UserUpdateOneRequiredWithoutEmailVerificationTokensNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutEmailVerificationTokensInput, Prisma.UserUpdateWithoutEmailVerificationTokensInput>, Prisma.UserUncheckedUpdateWithoutEmailVerificationTokensInput>
 }
 
+export type UserCreateNestedOneWithoutPasswordResetTokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPasswordResetTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPasswordResetTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPasswordResetTokensInput
+  upsert?: Prisma.UserUpsertWithoutPasswordResetTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPasswordResetTokensInput, Prisma.UserUpdateWithoutPasswordResetTokensInput>, Prisma.UserUncheckedUpdateWithoutPasswordResetTokensInput>
+}
+
+export type UserCreateNestedOneWithoutRefreshSessionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRefreshSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshSessionsInput
+  upsert?: Prisma.UserUpsertWithoutRefreshSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRefreshSessionsInput, Prisma.UserUpdateWithoutRefreshSessionsInput>, Prisma.UserUncheckedUpdateWithoutRefreshSessionsInput>
+}
+
+export type UserCreateNestedOneWithoutAnnouncementsAuthoredInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAnnouncementsAuthoredInput, Prisma.UserUncheckedCreateWithoutAnnouncementsAuthoredInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAnnouncementsAuthoredInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutAnnouncementsAuthoredNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAnnouncementsAuthoredInput, Prisma.UserUncheckedCreateWithoutAnnouncementsAuthoredInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAnnouncementsAuthoredInput
+  upsert?: Prisma.UserUpsertWithoutAnnouncementsAuthoredInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAnnouncementsAuthoredInput, Prisma.UserUpdateWithoutAnnouncementsAuthoredInput>, Prisma.UserUncheckedUpdateWithoutAnnouncementsAuthoredInput>
+}
+
+export type UserCreateNestedOneWithoutNotificationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  upsert?: Prisma.UserUpsertWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsInput, Prisma.UserUpdateWithoutNotificationsInput>, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
 export type UserCreateNestedOneWithoutCoursesTaughtInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutCoursesTaughtInput, Prisma.UserUncheckedCreateWithoutCoursesTaughtInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutCoursesTaughtInput
@@ -815,6 +901,10 @@ export type UserCreateWithoutStudentRegistryInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -842,6 +932,10 @@ export type UserUncheckedCreateWithoutStudentRegistryInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -885,6 +979,10 @@ export type UserUpdateWithoutStudentRegistryInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -912,6 +1010,10 @@ export type UserUncheckedUpdateWithoutStudentRegistryInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -939,6 +1041,10 @@ export type UserCreateWithoutFacultyApplicationInput = {
   studentRegistry?: Prisma.StudentRegistryCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -966,6 +1072,10 @@ export type UserUncheckedCreateWithoutFacultyApplicationInput = {
   passwordHash: string
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -998,6 +1108,10 @@ export type UserCreateWithoutReviewedApplicationsInput = {
   studentRegistry?: Prisma.StudentRegistryCreateNestedOneWithoutApplicantInput
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -1025,6 +1139,10 @@ export type UserUncheckedCreateWithoutReviewedApplicationsInput = {
   passwordHash: string
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -1068,6 +1186,10 @@ export type UserUpdateWithoutFacultyApplicationInput = {
   studentRegistry?: Prisma.StudentRegistryUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -1095,6 +1217,10 @@ export type UserUncheckedUpdateWithoutFacultyApplicationInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -1133,6 +1259,10 @@ export type UserUpdateWithoutReviewedApplicationsInput = {
   studentRegistry?: Prisma.StudentRegistryUpdateOneWithoutApplicantNestedInput
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -1160,6 +1290,10 @@ export type UserUncheckedUpdateWithoutReviewedApplicationsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -1187,6 +1321,10 @@ export type UserCreateWithoutEmailVerificationTokensInput = {
   studentRegistry?: Prisma.StudentRegistryCreateNestedOneWithoutApplicantInput
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -1214,6 +1352,10 @@ export type UserUncheckedCreateWithoutEmailVerificationTokensInput = {
   passwordHash: string
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -1257,6 +1399,10 @@ export type UserUpdateWithoutEmailVerificationTokensInput = {
   studentRegistry?: Prisma.StudentRegistryUpdateOneWithoutApplicantNestedInput
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -1284,6 +1430,570 @@ export type UserUncheckedUpdateWithoutEmailVerificationTokensInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUncheckedUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUncheckedUpdateManyWithoutStudentNestedInput
+}
+
+export type UserCreateWithoutPasswordResetTokensInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  studentRegistry?: Prisma.StudentRegistryCreateNestedOneWithoutApplicantInput
+  facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressCreateNestedManyWithoutStudentInput
+}
+
+export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  studentRegistryId?: string | null
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressUncheckedCreateNestedManyWithoutStudentInput
+}
+
+export type UserCreateOrConnectWithoutPasswordResetTokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+}
+
+export type UserUpsertWithoutPasswordResetTokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPasswordResetTokensInput, Prisma.UserUncheckedUpdateWithoutPasswordResetTokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPasswordResetTokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPasswordResetTokensInput, Prisma.UserUncheckedUpdateWithoutPasswordResetTokensInput>
+}
+
+export type UserUpdateWithoutPasswordResetTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  studentRegistry?: Prisma.StudentRegistryUpdateOneWithoutApplicantNestedInput
+  facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUpdateManyWithoutStudentNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  studentRegistryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUncheckedUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUncheckedUpdateManyWithoutStudentNestedInput
+}
+
+export type UserCreateWithoutRefreshSessionsInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  studentRegistry?: Prisma.StudentRegistryCreateNestedOneWithoutApplicantInput
+  facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressCreateNestedManyWithoutStudentInput
+}
+
+export type UserUncheckedCreateWithoutRefreshSessionsInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  studentRegistryId?: string | null
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressUncheckedCreateNestedManyWithoutStudentInput
+}
+
+export type UserCreateOrConnectWithoutRefreshSessionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+}
+
+export type UserUpsertWithoutRefreshSessionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRefreshSessionsInput, Prisma.UserUncheckedUpdateWithoutRefreshSessionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRefreshSessionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRefreshSessionsInput, Prisma.UserUncheckedUpdateWithoutRefreshSessionsInput>
+}
+
+export type UserUpdateWithoutRefreshSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  studentRegistry?: Prisma.StudentRegistryUpdateOneWithoutApplicantNestedInput
+  facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUpdateManyWithoutStudentNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRefreshSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  studentRegistryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUncheckedUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUncheckedUpdateManyWithoutStudentNestedInput
+}
+
+export type UserCreateWithoutAnnouncementsAuthoredInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  studentRegistry?: Prisma.StudentRegistryCreateNestedOneWithoutApplicantInput
+  facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressCreateNestedManyWithoutStudentInput
+}
+
+export type UserUncheckedCreateWithoutAnnouncementsAuthoredInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  studentRegistryId?: string | null
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressUncheckedCreateNestedManyWithoutStudentInput
+}
+
+export type UserCreateOrConnectWithoutAnnouncementsAuthoredInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAnnouncementsAuthoredInput, Prisma.UserUncheckedCreateWithoutAnnouncementsAuthoredInput>
+}
+
+export type UserUpsertWithoutAnnouncementsAuthoredInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAnnouncementsAuthoredInput, Prisma.UserUncheckedUpdateWithoutAnnouncementsAuthoredInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAnnouncementsAuthoredInput, Prisma.UserUncheckedCreateWithoutAnnouncementsAuthoredInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAnnouncementsAuthoredInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAnnouncementsAuthoredInput, Prisma.UserUncheckedUpdateWithoutAnnouncementsAuthoredInput>
+}
+
+export type UserUpdateWithoutAnnouncementsAuthoredInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  studentRegistry?: Prisma.StudentRegistryUpdateOneWithoutApplicantNestedInput
+  facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUpdateManyWithoutStudentNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAnnouncementsAuthoredInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  studentRegistryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUncheckedUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUncheckedUpdateManyWithoutStudentNestedInput
+}
+
+export type UserCreateWithoutNotificationsInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  studentRegistry?: Prisma.StudentRegistryCreateNestedOneWithoutApplicantInput
+  facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressCreateNestedManyWithoutStudentInput
+}
+
+export type UserUncheckedCreateWithoutNotificationsInput = {
+  id?: string
+  name: string
+  email: string
+  createdAt?: Date | string
+  department?: string | null
+  enrollmentNo?: string | null
+  role?: $Enums.Role
+  status?: $Enums.AccountStatus
+  studentRegistryId?: string | null
+  updatedAt?: Date | string
+  avatarUrl?: string | null
+  employeeId?: string | null
+  passwordHash: string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
+  aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
+  coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutStudentInput
+  performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutStudentInput
+  quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutStudentInput
+  recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutStudentInput
+  submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutStudentInput
+  materialProgress?: Prisma.MaterialProgressUncheckedCreateNestedManyWithoutStudentInput
+}
+
+export type UserCreateOrConnectWithoutNotificationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+}
+
+export type UserUpsertWithoutNotificationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutNotificationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type UserUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  studentRegistry?: Prisma.StudentRegistryUpdateOneWithoutApplicantNestedInput
+  facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
+  aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
+  coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutStudentNestedInput
+  performances?: Prisma.PerformanceUpdateManyWithoutStudentNestedInput
+  quizAttempts?: Prisma.QuizAttemptUpdateManyWithoutStudentNestedInput
+  recommendations?: Prisma.RecommendationUpdateManyWithoutStudentNestedInput
+  submissions?: Prisma.SubmissionUpdateManyWithoutStudentNestedInput
+  materialProgress?: Prisma.MaterialProgressUpdateManyWithoutStudentNestedInput
+}
+
+export type UserUncheckedUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  enrollmentNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  status?: Prisma.EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
+  studentRegistryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  employeeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
+  reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -1312,6 +2022,10 @@ export type UserCreateWithoutCoursesTaughtInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutStudentInput
@@ -1339,6 +2053,10 @@ export type UserUncheckedCreateWithoutCoursesTaughtInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutStudentInput
@@ -1382,6 +2100,10 @@ export type UserUpdateWithoutCoursesTaughtInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutStudentNestedInput
@@ -1409,6 +2131,10 @@ export type UserUncheckedUpdateWithoutCoursesTaughtInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutStudentNestedInput
@@ -1436,6 +2162,10 @@ export type UserCreateWithoutEnrollmentsInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -1463,6 +2193,10 @@ export type UserUncheckedCreateWithoutEnrollmentsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -1506,6 +2240,10 @@ export type UserUpdateWithoutEnrollmentsInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -1533,6 +2271,10 @@ export type UserUncheckedUpdateWithoutEnrollmentsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -1560,6 +2302,10 @@ export type UserCreateWithoutSubmissionsInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -1587,6 +2333,10 @@ export type UserUncheckedCreateWithoutSubmissionsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -1630,6 +2380,10 @@ export type UserUpdateWithoutSubmissionsInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -1657,6 +2411,10 @@ export type UserUncheckedUpdateWithoutSubmissionsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -1684,6 +2442,10 @@ export type UserCreateWithoutQuizAttemptsInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -1711,6 +2473,10 @@ export type UserUncheckedCreateWithoutQuizAttemptsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -1754,6 +2520,10 @@ export type UserUpdateWithoutQuizAttemptsInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -1781,6 +2551,10 @@ export type UserUncheckedUpdateWithoutQuizAttemptsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -1808,6 +2582,10 @@ export type UserCreateWithoutAiConversationsInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutStudentInput
@@ -1835,6 +2613,10 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutStudentInput
@@ -1878,6 +2660,10 @@ export type UserUpdateWithoutAiConversationsInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutStudentNestedInput
@@ -1905,6 +2691,10 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutStudentNestedInput
@@ -1932,6 +2722,10 @@ export type UserCreateWithoutAiMessageRequestsInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
   enrollments?: Prisma.EnrollmentCreateNestedManyWithoutStudentInput
@@ -1959,6 +2753,10 @@ export type UserUncheckedCreateWithoutAiMessageRequestsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
   enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutStudentInput
@@ -2002,6 +2800,10 @@ export type UserUpdateWithoutAiMessageRequestsInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
   enrollments?: Prisma.EnrollmentUpdateManyWithoutStudentNestedInput
@@ -2029,6 +2831,10 @@ export type UserUncheckedUpdateWithoutAiMessageRequestsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
   enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutStudentNestedInput
@@ -2056,6 +2862,10 @@ export type UserCreateWithoutPerformancesInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -2083,6 +2893,10 @@ export type UserUncheckedCreateWithoutPerformancesInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -2126,6 +2940,10 @@ export type UserUpdateWithoutPerformancesInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -2153,6 +2971,10 @@ export type UserUncheckedUpdateWithoutPerformancesInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -2180,6 +3002,10 @@ export type UserCreateWithoutRecommendationsInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -2207,6 +3033,10 @@ export type UserUncheckedCreateWithoutRecommendationsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -2250,6 +3080,10 @@ export type UserUpdateWithoutRecommendationsInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -2277,6 +3111,10 @@ export type UserUncheckedUpdateWithoutRecommendationsInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -2304,6 +3142,10 @@ export type UserCreateWithoutMaterialProgressInput = {
   facultyApplication?: Prisma.FacultyApplicationCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseCreateNestedManyWithoutFacultyInput
@@ -2331,6 +3173,10 @@ export type UserUncheckedCreateWithoutMaterialProgressInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedCreateNestedOneWithoutApplicantInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedCreateNestedManyWithoutReviewerInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutAuthorInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedCreateNestedManyWithoutUserInput
   aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutUserInput
   coursesTaught?: Prisma.CourseUncheckedCreateNestedManyWithoutFacultyInput
@@ -2374,6 +3220,10 @@ export type UserUpdateWithoutMaterialProgressInput = {
   facultyApplication?: Prisma.FacultyApplicationUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUpdateManyWithoutFacultyNestedInput
@@ -2401,6 +3251,10 @@ export type UserUncheckedUpdateWithoutMaterialProgressInput = {
   facultyApplication?: Prisma.FacultyApplicationUncheckedUpdateOneWithoutApplicantNestedInput
   reviewedApplications?: Prisma.FacultyApplicationUncheckedUpdateManyWithoutReviewerNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  announcementsAuthored?: Prisma.AnnouncementUncheckedUpdateManyWithoutAuthorNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   aiMessageRequests?: Prisma.AIMessageRequestUncheckedUpdateManyWithoutUserNestedInput
   aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutUserNestedInput
   coursesTaught?: Prisma.CourseUncheckedUpdateManyWithoutFacultyNestedInput
@@ -2419,6 +3273,10 @@ export type UserUncheckedUpdateWithoutMaterialProgressInput = {
 export type UserCountOutputType = {
   reviewedApplications: number
   emailVerificationTokens: number
+  passwordResetTokens: number
+  refreshSessions: number
+  announcementsAuthored: number
+  notifications: number
   aiMessageRequests: number
   aiConversations: number
   coursesTaught: number
@@ -2433,6 +3291,10 @@ export type UserCountOutputType = {
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewedApplications?: boolean | UserCountOutputTypeCountReviewedApplicationsArgs
   emailVerificationTokens?: boolean | UserCountOutputTypeCountEmailVerificationTokensArgs
+  passwordResetTokens?: boolean | UserCountOutputTypeCountPasswordResetTokensArgs
+  refreshSessions?: boolean | UserCountOutputTypeCountRefreshSessionsArgs
+  announcementsAuthored?: boolean | UserCountOutputTypeCountAnnouncementsAuthoredArgs
+  notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
   aiMessageRequests?: boolean | UserCountOutputTypeCountAiMessageRequestsArgs
   aiConversations?: boolean | UserCountOutputTypeCountAiConversationsArgs
   coursesTaught?: boolean | UserCountOutputTypeCountCoursesTaughtArgs
@@ -2466,6 +3328,34 @@ export type UserCountOutputTypeCountReviewedApplicationsArgs<ExtArgs extends run
  */
 export type UserCountOutputTypeCountEmailVerificationTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.EmailVerificationTokenWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPasswordResetTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PasswordResetTokenWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRefreshSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RefreshSessionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAnnouncementsAuthoredArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnnouncementWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
 }
 
 /**
@@ -2550,6 +3440,10 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   facultyApplication?: boolean | Prisma.User$facultyApplicationArgs<ExtArgs>
   reviewedApplications?: boolean | Prisma.User$reviewedApplicationsArgs<ExtArgs>
   emailVerificationTokens?: boolean | Prisma.User$emailVerificationTokensArgs<ExtArgs>
+  passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
+  refreshSessions?: boolean | Prisma.User$refreshSessionsArgs<ExtArgs>
+  announcementsAuthored?: boolean | Prisma.User$announcementsAuthoredArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   aiMessageRequests?: boolean | Prisma.User$aiMessageRequestsArgs<ExtArgs>
   aiConversations?: boolean | Prisma.User$aiConversationsArgs<ExtArgs>
   coursesTaught?: boolean | Prisma.User$coursesTaughtArgs<ExtArgs>
@@ -2618,6 +3512,10 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   facultyApplication?: boolean | Prisma.User$facultyApplicationArgs<ExtArgs>
   reviewedApplications?: boolean | Prisma.User$reviewedApplicationsArgs<ExtArgs>
   emailVerificationTokens?: boolean | Prisma.User$emailVerificationTokensArgs<ExtArgs>
+  passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
+  refreshSessions?: boolean | Prisma.User$refreshSessionsArgs<ExtArgs>
+  announcementsAuthored?: boolean | Prisma.User$announcementsAuthoredArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   aiMessageRequests?: boolean | Prisma.User$aiMessageRequestsArgs<ExtArgs>
   aiConversations?: boolean | Prisma.User$aiConversationsArgs<ExtArgs>
   coursesTaught?: boolean | Prisma.User$coursesTaughtArgs<ExtArgs>
@@ -2643,6 +3541,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     facultyApplication: Prisma.$FacultyApplicationPayload<ExtArgs> | null
     reviewedApplications: Prisma.$FacultyApplicationPayload<ExtArgs>[]
     emailVerificationTokens: Prisma.$EmailVerificationTokenPayload<ExtArgs>[]
+    passwordResetTokens: Prisma.$PasswordResetTokenPayload<ExtArgs>[]
+    refreshSessions: Prisma.$RefreshSessionPayload<ExtArgs>[]
+    announcementsAuthored: Prisma.$AnnouncementPayload<ExtArgs>[]
+    notifications: Prisma.$NotificationPayload<ExtArgs>[]
     aiMessageRequests: Prisma.$AIMessageRequestPayload<ExtArgs>[]
     aiConversations: Prisma.$AIConversationPayload<ExtArgs>[]
     coursesTaught: Prisma.$CoursePayload<ExtArgs>[]
@@ -3065,6 +3967,10 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   facultyApplication<T extends Prisma.User$facultyApplicationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$facultyApplicationArgs<ExtArgs>>): Prisma.Prisma__FacultyApplicationClient<runtime.Types.Result.GetResult<Prisma.$FacultyApplicationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   reviewedApplications<T extends Prisma.User$reviewedApplicationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$reviewedApplicationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FacultyApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   emailVerificationTokens<T extends Prisma.User$emailVerificationTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$emailVerificationTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmailVerificationTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  passwordResetTokens<T extends Prisma.User$passwordResetTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passwordResetTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  refreshSessions<T extends Prisma.User$refreshSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  announcementsAuthored<T extends Prisma.User$announcementsAuthoredArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$announcementsAuthoredArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnnouncementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   aiMessageRequests<T extends Prisma.User$aiMessageRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$aiMessageRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AIMessageRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   aiConversations<T extends Prisma.User$aiConversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$aiConversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AIConversationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   coursesTaught<T extends Prisma.User$coursesTaughtArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$coursesTaughtArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CoursePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3600,6 +4506,102 @@ export type User$emailVerificationTokensArgs<ExtArgs extends runtime.Types.Exten
   take?: number
   skip?: number
   distinct?: Prisma.EmailVerificationTokenScalarFieldEnum | Prisma.EmailVerificationTokenScalarFieldEnum[]
+}
+
+/**
+ * User.passwordResetTokens
+ */
+export type User$passwordResetTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PasswordResetToken
+   */
+  select?: Prisma.PasswordResetTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PasswordResetToken
+   */
+  omit?: Prisma.PasswordResetTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PasswordResetTokenInclude<ExtArgs> | null
+  where?: Prisma.PasswordResetTokenWhereInput
+  orderBy?: Prisma.PasswordResetTokenOrderByWithRelationInput | Prisma.PasswordResetTokenOrderByWithRelationInput[]
+  cursor?: Prisma.PasswordResetTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PasswordResetTokenScalarFieldEnum | Prisma.PasswordResetTokenScalarFieldEnum[]
+}
+
+/**
+ * User.refreshSessions
+ */
+export type User$refreshSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RefreshSession
+   */
+  select?: Prisma.RefreshSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RefreshSession
+   */
+  omit?: Prisma.RefreshSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RefreshSessionInclude<ExtArgs> | null
+  where?: Prisma.RefreshSessionWhereInput
+  orderBy?: Prisma.RefreshSessionOrderByWithRelationInput | Prisma.RefreshSessionOrderByWithRelationInput[]
+  cursor?: Prisma.RefreshSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RefreshSessionScalarFieldEnum | Prisma.RefreshSessionScalarFieldEnum[]
+}
+
+/**
+ * User.announcementsAuthored
+ */
+export type User$announcementsAuthoredArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Announcement
+   */
+  select?: Prisma.AnnouncementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Announcement
+   */
+  omit?: Prisma.AnnouncementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnnouncementInclude<ExtArgs> | null
+  where?: Prisma.AnnouncementWhereInput
+  orderBy?: Prisma.AnnouncementOrderByWithRelationInput | Prisma.AnnouncementOrderByWithRelationInput[]
+  cursor?: Prisma.AnnouncementWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnnouncementScalarFieldEnum | Prisma.AnnouncementScalarFieldEnum[]
+}
+
+/**
+ * User.notifications
+ */
+export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Notification
+   */
+  select?: Prisma.NotificationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Notification
+   */
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
 }
 
 /**

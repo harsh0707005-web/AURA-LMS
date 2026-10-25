@@ -1,8 +1,10 @@
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import prisma from "../lib/prisma.js";
+import { assertDemoSeedAllowed } from "../config/production-config.js";
 
 async function seed() {
+  assertDemoSeedAllowed();
   console.log("==========================================");
   console.log("AuraLMS Database Seed: Provisioning Academic Platform");
   console.log("==========================================");
@@ -522,7 +524,7 @@ async function seed() {
 
 seed()
   .catch((err) => {
-    console.error("Database seed failed:", err);
+    console.error("Database seed failed:", err instanceof Error ? err.message : String(err));
     process.exit(1);
   })
   .finally(async () => {

@@ -12,32 +12,42 @@ Base URL: `http://localhost:5000/api`
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `DATABASE_URL` | String | `postgresql://...` | PostgreSQL connection string |
+| `FRONTEND_URL` | URL | `http://localhost:3000` | Allowed frontend origin; must be HTTPS and origin-only in production |
 | `JWT_SECRET` | String | *Required* | Secret for signing HS256 auth tokens |
+| `ACCESS_TOKEN_EXPIRES_IN` | Duration | `15m` | Access-token lifetime; production requires an explicit value no longer than one hour |
 | `GEMINI_API_KEY` | String | *Required* | Google Gemini API key (backend only) |
 | `GEMINI_EMBEDDING_MODEL` | String | `gemini-embedding-001` | 3072-dimensional vector embedding model |
-| `GEMINI_GENERATION_MODEL` | String | `gemini-3.7-flash` | Grounded academic completion model; fallback attempts are reported separately |
+| `GEMINI_GENERATION_MODEL` | String | `gemini-3.7-flash` | Primary grounded academic completion model; Gemini model fallbacks are reported separately |
 | `GEMINI_FALLBACK_MODELS` | CSV | built-in Gemini fallback list | Optional ordered fallback models; fallback is recorded in telemetry |
 | `GEMINI_THINKING_BUDGET` | Number | `0` | Thinking budget for normal tutor requests |
 | `GEMINI_COMPLEX_THINKING_BUDGET` | Number | `1024` | Thinking budget for proof/derivation requests |
 | `GEMINI_REQUEST_TIMEOUT_MS` | Number | `45000` | Per-network-attempt Gemini timeout (the SDK requires at least 10 seconds) |
 | `GEMINI_EMBEDDING_BUDGET_MS` | Number | `30000` | Total embedding budget across embedding retries |
-| `GEMINI_GENERATION_BUDGET_MS` | Number | `90000` | Total normal tutor-generation budget across retries/fallbacks |
+| `GEMINI_GENERATION_BUDGET_MS` | Number | `90000` | Total normal tutor-generation budget across Gemini retries/fallbacks and optional Groq failover |
 | `GEMINI_COMPLEX_GENERATION_BUDGET_MS` | Number | `120000` | Total complex tutor-generation budget |
 | `GEMINI_MAX_ATTEMPTS_PER_MODEL` | Number | `1` | Maximum attempts for one generation model; fallback models remain available |
 | `GEMINI_MAX_TOTAL_ATTEMPTS` | Number | `4` | Maximum generation attempts across the fallback chain |
 | `GEMINI_TUTOR_MAX_OUTPUT_TOKENS` | Number | `1200` | Conservative output cap for normal tutor answers |
 | `GEMINI_TUTOR_COMPLEX_MAX_OUTPUT_TOKENS` | Number | `1600` | Output cap for complex tutor answers |
-| `DEFAULT_LLM_PROVIDER` | String | `gemini` | Active completion provider; Groq is opt-in and does not replace Gemini embeddings |
-| `GROQ_API_KEY` | String | *Unset* | Optional Groq credential; live Groq calls are unavailable when unset |
+| `DEFAULT_LLM_PROVIDER` | String | `gemini` | Active completion provider; with Gemini selected, Groq is an optional generation-only failover |
+| `GROQ_API_KEY` | String | *Unset* | Optional Groq credential; when set, tutor generation can fail over to Groq after Gemini fails |
 | `GROQ_MODEL` | String | `openai/gpt-oss-20b` | Optional Groq completion model |
 | `GROQ_API_URL` | String | Groq chat-completions endpoint | Optional OpenAI-compatible endpoint override |
 | `GROQ_TIMEOUT_MS` | Number | `30000` | Per-attempt Groq timeout |
+| `S3_ENABLED` | Boolean | `false` | Selects S3-compatible storage; must be `true` in production |
+| `S3_BUCKET_NAME` | String | *Unset* | Canonical S3-compatible bucket name |
+| `S3_REGION` | String | `us-east-1` | Canonical S3-compatible region |
+| `S3_ENDPOINT` | URL | *Unset* | Optional S3-compatible endpoint override |
+| `S3_FORCE_PATH_STYLE` | Boolean | `false` | Use path-style requests for compatible providers |
+| `S3_DELIVERY_MODE` | String | `proxy` | Protected backend proxy delivery mode |
 | `RAG_TOP_K` | Number | `5` | Maximum number of chunks to retrieve |
 | `RAG_MIN_SIMILARITY` | Number | `0.55` | Minimum cosine similarity threshold (1 - distance) |
 | `RAG_MAX_CONTEXT_CHARS` | Number | `10000` | Maximum retrieved-context characters sent to the tutor |
 | `RAG_MAX_HISTORY_CHARS` | Number | `4000` | Maximum conversation-history characters sent to the tutor |
 
 The frontend uses `NEXT_PUBLIC_API_URL` for the backend base URL and an optional `NEXT_PUBLIC_AI_REQUEST_TIMEOUT_MS` client abort window. The default client window is `125000` ms and does not change server-side provider budgets. `AI_MESSAGE_WORKFLOW_TIMEOUT_MS` controls the durable AI-message workflow deadline and defaults to `120000` ms. A browser disconnect does not cancel server-side processing; clients should reconcile through the idempotency-key status endpoint.
+
+When `DEFAULT_LLM_PROVIDER=gemini` and `GROQ_API_KEY` is configured, Gemini remains the primary completion provider. Groq is attempted only after Gemini generation and its configured Gemini model fallback chain fail. Gemini continues to provide embeddings, and the retrieved course context, grounding threshold, citations, and personalization are unchanged. If Groq is unavailable, the existing Gemini-only behavior is preserved.
 
 ---
 
@@ -117,12 +127,37 @@ Required backend environment variables for real email delivery are `RESEND_API_K
 ```
 
 ### `POST /api/auth/login`
-- **Description**: Authenticates user and returns JWT Bearer token with role metadata.
+- **Description**: Authenticates an active user, returns a short-lived JWT Bearer token with role metadata, and sets an HttpOnly refresh-session cookie.
 - **Access**: Public
+- **Request Body**: `{ "email": "student@college.edu", "password": "...", "portalRole": "STUDENT" }`
+- **Portal selection**: `portalRole` is optional for API clients. When provided by the login UI, it must match the role stored for the account; it never grants or changes authorization.
+
+### `POST /api/auth/refresh`
+- **Description**: Rotates the current HttpOnly refresh session and returns a new access token. Refresh tokens are never returned in JSON.
+- **Access**: Public with a valid refresh cookie
+- **Failure**: Invalid, expired, revoked, or replayed refresh sessions return `401`; replay detection revokes the user's remaining refresh sessions.
+
+### `POST /api/auth/request-password-reset`
+- **Description**: Requests a one-time password reset email. The response is intentionally identical whether the email belongs to an active account or not.
+- **Access**: Public; limited to 5 requests per IP per 15 minutes in the current process-local limiter.
+- **Request Body**: `{ "email": "student@college.edu" }`
+- **Response**: `202 Accepted` with `{ "success": true, "message": "If an active account exists for that email, a password reset link has been sent." }`
+- **Security**: Reset tokens are hashed at rest, expire after one hour, and are never returned by the API.
+
+### `POST /api/auth/reset-password`
+- **Description**: Consumes a valid single-use reset token and updates the bcrypt password hash.
+- **Access**: Public with a reset token; limited by the authentication limiter.
+- **Request Body**: `{ "token": "<raw-token>", "password": "NewPassword123" }`
+- **Response**: `200 OK` after the token is consumed and remaining reset tokens for the account are invalidated.
+- **Failure**: Invalid, expired, already-used, or non-active-account tokens return a safe `400` message.
 
 ### `GET /api/auth/me`
 - **Description**: Returns the authenticated user session profile.
 - **Access**: Authenticated
+
+### `POST /api/auth/logout`
+- **Description**: Revokes the current refresh session, clears the refresh cookie, and lets the browser discard its in-memory access token. An already-issued access token remains valid until expiry.
+- **Access**: Public/idempotent
 
 ---
 
@@ -146,7 +181,40 @@ Required backend environment variables for real email delivery are `RESEND_API_K
 
 ---
 
-## 5. Course Materials & Document Ingestion (Phase 1 & Phase 2 RAG)
+## 5. Announcements & Notifications
+
+### `GET /api/announcements`
+- **Description**: Returns recent announcements visible to the authenticated user. Students receive institution announcements and announcements for their active courses; faculty receive announcements they authored; administrators receive all announcements.
+- **Access**: Authenticated
+
+### `POST /api/announcements`
+- **Description**: Publishes an announcement and creates notification records for the targeted active students.
+- **Access**: `FACULTY`, `ADMIN`
+- **Request Body**:
+```json
+{
+  "title": "Midterm review session",
+  "body": "The review session is scheduled for Friday at 3 PM.",
+  "courseId": "optional-course-id"
+}
+```
+- Faculty must provide a course they teach. Administrators may provide a course or omit `courseId` to notify all active students.
+
+### `GET /api/notifications`
+- **Description**: Returns the authenticated user's recent notifications and unread count.
+- **Access**: Authenticated
+
+### `PATCH /api/notifications/:id/read`
+- **Description**: Marks one notification as read. A user cannot mark another user's notification as read.
+- **Access**: Authenticated
+
+### `PATCH /api/notifications/read-all`
+- **Description**: Marks all unread notifications for the authenticated user as read.
+- **Access**: Authenticated
+
+---
+
+## 6. Course Materials & Document Ingestion (Phase 1 & Phase 2 RAG)
 
 ### `POST /api/courses/:courseId/materials`
 - **Description**: Accepts multipart/form-data PDF upload, extracts text, generates 500-token overlapping chunks, computes 3072-dimensional vector embeddings with Gemini, and stores them in PostgreSQL `DocumentChunk` with `vector(3072)`.

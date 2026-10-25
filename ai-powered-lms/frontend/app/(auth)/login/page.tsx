@@ -16,8 +16,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [role, setRole] = useState<UserRole>("STUDENT");
-  const [email, setEmail] = useState("harsh.ce@college.edu");
-  const [password, setPassword] = useState("Password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -25,10 +25,8 @@ export default function LoginPage() {
   const handleRoleChange = (newRole: UserRole) => {
     setRole(newRole);
     setErrorMessage("");
-    if (newRole === "STUDENT") setEmail("harsh.ce@college.edu");
-    else if (newRole === "FACULTY") setEmail("dr.rajesh@college.edu");
-    else setEmail("admin.ce@college.edu");
-    setPassword("Password123");
+    setEmail("");
+    setPassword("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,10 +37,28 @@ export default function LoginPage() {
     try {
       const res = await apiRequest<LoginResponsePayload>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, portalRole: role }),
       });
 
       if (res.success && res.data?.token) {
+        // Keep the UI safe even when an older backend instance has not yet
+        // been restarted with portalRole enforcement. The database role is
+        // authoritative; the selected tab can never change it.
+        if (res.data.user.role !== role) {
+          try {
+            await apiRequest("/auth/logout", { method: "POST" });
+          } catch {
+            // The access token was never stored locally; keep the safe error.
+          }
+          const roleLabel = res.data.user.role === "STUDENT"
+            ? "Student"
+            : res.data.user.role === "FACULTY"
+              ? "Faculty"
+              : "Administrator";
+          setErrorMessage(`This account is registered as ${roleLabel}. Select the ${roleLabel} tab to continue.`);
+          return;
+        }
+
         login(res.data.token, res.data.user);
 
         const targetRole = res.data.user.role;
@@ -64,7 +80,7 @@ export default function LoginPage() {
         <div className="bg-inverse-surface text-inverse-on-surface p-8 sm:p-10 flex flex-col justify-between">
           <div>
             <Link href="/" className="inline-flex items-center space-x-3 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center text-on-primary shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-primary to-primary-container flex items-center justify-center text-on-primary shadow-sm">
                 <span className="material-symbols-outlined text-[22px]">auto_awesome</span>
               </div>
               <div className="flex flex-col">
@@ -100,17 +116,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Quick Demo Credentials Info */}
-          <div className="mt-8 pt-5 border-t border-outline/30 text-[11px] text-outline-variant space-y-1">
-            <div className="font-semibold text-white mb-1.5 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">key</span>
-              <span>Demo Institutional Accounts:</span>
-            </div>
-            <div>Student: <code className="text-primary-container font-mono bg-inverse-surface px-1.5 py-0.5 rounded">harsh.ce@college.edu</code></div>
-            <div>Faculty: <code className="text-primary-container font-mono bg-inverse-surface px-1.5 py-0.5 rounded">dr.rajesh@college.edu</code></div>
-            <div>Admin: <code className="text-primary-container font-mono bg-inverse-surface px-1.5 py-0.5 rounded">admin.ce@college.edu</code></div>
-            <div className="mt-1.5 text-[10px] text-outline font-mono">Password: Password123</div>
-          </div>
+          <p className="mt-8 border-t border-outline/30 pt-5 text-[11px] leading-relaxed text-outline-variant">
+            Use the institutional account issued by your administrator. Local demo accounts, when seeded, are documented in `docs/API-TESTING.md` rather than shown on the sign-in screen.
+          </p>
         </div>
 
         {/* Right Column: Clean Login Form */}
@@ -168,7 +176,7 @@ export default function LoginPage() {
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="font-semibold text-on-surface font-mono text-[11px] uppercase tracking-wider">Password</label>
-                <span className="text-[10px] text-on-surface-variant font-mono">Default: Password123</span>
+                <Link href="/forgot-password" className="text-[10px] text-primary hover:text-primary-container font-semibold">Forgot password?</Link>
               </div>
               <div className="relative">
                 <input

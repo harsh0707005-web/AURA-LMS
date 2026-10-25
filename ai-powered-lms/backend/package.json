@@ -18,7 +18,13 @@
     "migrate:s3": "tsc && node dist/scripts/migrate-materials-to-s3.js",
     "restore:s3": "tsc && node dist/scripts/restore-materials-from-s3.js",
     "test:s3": "tsc && node dist/scripts/test-phase14-s3.js",
-    "test:quiz": "tsc && node dist/scripts/test-phase15-quiz-generation.js"
+    "test:quiz": "tsc && node dist/scripts/test-phase15-quiz-generation.js",
+    "backup:database": "tsc && node dist/scripts/backup-database.js",
+    "restore:database": "tsc && node dist/scripts/restore-database.js",
+    "backup:storage": "tsc && node dist/scripts/backup-storage.js",
+    "check:email": "tsc && node dist/scripts/check-email.js",
+    "test:restore:local": "tsc && node dist/scripts/test-local-restore.js",
+    "test:restore:auth": "tsc && node dist/scripts/test-restored-auth.js"
   },
   "keywords": [],
   "author": "",
@@ -48,7 +54,6 @@
     "@types/node": "^26.2.0",
     "@types/pdf-parse": "^1.1.5",
     "@types/pg": "^8.23.1",
-    "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }
 }

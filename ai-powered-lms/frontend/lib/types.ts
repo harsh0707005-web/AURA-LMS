@@ -250,6 +250,41 @@ export interface AIMessage {
   suggestedFollowUps?: string[];
 }
 
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  courseId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  course?: {
+    id: string;
+    code: string;
+    title: string;
+  } | null;
+  author?: {
+    id: string;
+    name: string;
+    role: UserRole;
+  } | null;
+}
+
+export interface AppNotification {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  link?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+  announcement?: Announcement | null;
+}
+
+export interface NotificationSummary {
+  items: AppNotification[];
+  unreadCount: number;
+}
+
 export type AIMessageDeliveryStatus = "processing" | "retrying" | "completed" | "failed";
 
 export interface AITutorTiming {

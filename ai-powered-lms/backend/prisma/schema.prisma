@@ -21,6 +21,10 @@ model User {
   facultyApplication FacultyApplication? @relation("FacultyApplicant")
   reviewedApplications FacultyApplication[] @relation("FacultyReviewer")
   emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  refreshSessions RefreshSession[]
+  announcementsAuthored Announcement[] @relation("AnnouncementAuthors")
+  notifications Notification[]
   aiMessageRequests AIMessageRequest[]
   updatedAt       DateTime         @default(now()) @updatedAt
   avatarUrl       String?
@@ -94,6 +98,65 @@ model EmailVerificationToken {
   @@index([userId])
 }
 
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RefreshSession {
+  id         String   @id @default(uuid())
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model Announcement {
+  id            String         @id @default(uuid())
+  title         String
+  body          String         @db.Text
+  courseId      String?
+  authorId      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
+  course        Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author        User?          @relation("AnnouncementAuthors", fields: [authorId], references: [id], onDelete: SetNull)
+  notifications Notification[]
+
+  @@index([courseId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model Notification {
+  id             String        @id @default(uuid())
+  userId         String
+  announcementId String?
+  kind           String        @default("ANNOUNCEMENT")
+  title          String
+  body           String         @db.Text
+  link           String?
+  readAt         DateTime?
+  createdAt      DateTime       @default(now())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement   Announcement?  @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, announcementId])
+  @@index([userId, readAt, createdAt])
+}
+
 model Course {
   id              String           @id @default(uuid())
   code            String           @unique
@@ -115,6 +178,7 @@ model Course {
   performances    Performance[]
   quizzes         Quiz[]
   recommendations Recommendation[]
+  announcements   Announcement[]
 
   @@index([facultyId])
   @@index([department])

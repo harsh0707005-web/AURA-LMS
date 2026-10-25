@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { apiRequest } from "@/lib/api";
+import { AppNotification, NotificationSummary } from "@/lib/types";
 import { useMobileNav } from "./DashboardShell";
 import CommandPalette from "./CommandPalette";
 
@@ -33,6 +35,7 @@ const ROUTE_LABELS: Record<string, string> = {
   performance: "Performance",
   students: "Student Roster",
   analytics: "Academic Analytics",
+  announcements: "Announcements",
   users: "User Accounts",
   profile: "Profile",
   create: "New Course",
@@ -44,12 +47,48 @@ export function Topbar({ title, subtitle, onMenuClick, breadcrumbs }: TopbarProp
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   const mobileNav = useMobileNav();
   const handleMenuClick = onMenuClick || mobileNav.toggleMobile;
+
+  const loadNotifications = async () => {
+    if (!user) return;
+    try {
+      setNotificationsLoading(true);
+      const response = await apiRequest<NotificationSummary>("/notifications");
+      if (response.success && response.data) {
+        setNotifications(response.data.items || []);
+        setUnreadCount(response.data.unreadCount || 0);
+      }
+    } catch {
+      // The notification center is supplemental; keep the rest of the workspace usable.
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    void apiRequest<NotificationSummary>("/notifications")
+      .then((response) => {
+        if (cancelled || !response.success || !response.data) return;
+        setNotifications(response.data.items || []);
+        setUnreadCount(response.data.unreadCount || 0);
+      })
+      .catch(() => {
+        // The notification center is supplemental; keep the rest of the workspace usable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // Global Cmd+K / Ctrl+K listener for Command Search
   useEffect(() => {
@@ -153,12 +192,12 @@ export function Topbar({ title, subtitle, onMenuClick, breadcrumbs }: TopbarProp
                   {crumb.href ? (
                     <Link
                       href={crumb.href}
-                      className="hover:text-primary transition-colors truncate max-w-[120px]"
+                      className="hover:text-primary transition-colors truncate max-w-30"
                     >
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span className="text-on-surface-variant font-medium truncate max-w-[140px]">
+                    <span className="text-on-surface-variant font-medium truncate max-w-35">
                       {crumb.label}
                     </span>
                   )}
@@ -213,15 +252,23 @@ export function Topbar({ title, subtitle, onMenuClick, breadcrumbs }: TopbarProp
           </div>
 
           {/* Truthful Notifications Drawer Trigger (No fabricated counts) */}
-          <div className="relative" ref={notificationsRef}>
-            <button
-              type="button"
-              onClick={() => setIsNotificationsOpen((prev) => !prev)}
+           <div className="relative" ref={notificationsRef}>
+             <button
+               type="button"
+               onClick={() => {
+                 setIsNotificationsOpen((prev) => !prev);
+                 if (!isNotificationsOpen) loadNotifications();
+               }}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
               aria-label="View notifications"
               aria-expanded={isNotificationsOpen}
             >
-              <span className="material-symbols-outlined text-[20px]">notifications</span>
+               <span className="material-symbols-outlined text-[20px]">notifications</span>
+               {unreadCount > 0 && (
+                 <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-error px-1 text-center text-[9px] font-bold leading-4 text-on-error" aria-label={`${unreadCount} unread notifications`}>
+                   {unreadCount > 9 ? "9+" : unreadCount}
+                 </span>
+               )}
             </button>
 
             {isNotificationsOpen && (
@@ -238,15 +285,51 @@ export function Topbar({ title, subtitle, onMenuClick, breadcrumbs }: TopbarProp
                     Live Stream
                   </span>
                 </div>
-                <div className="py-8 text-center text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[26px] text-outline block mb-1">
-                    notifications_none
-                  </span>
-                  <p className="font-body-sm text-xs">No active notifications</p>
-                  <p className="font-label-sm text-[10px] text-outline mt-0.5">
-                    Course announcements and deadlines will appear here.
-                  </p>
-                </div>
+                 {notificationsLoading ? (
+                   <div className="py-8 text-center text-xs text-on-surface-variant">Loading notifications...</div>
+                 ) : notifications.length === 0 ? (
+                   <div className="py-8 text-center text-on-surface-variant">
+                     <span className="material-symbols-outlined mb-1 block text-[26px] text-outline">notifications_none</span>
+                     <p className="font-body-sm text-xs">No notifications yet</p>
+                     <p className="mt-0.5 font-label-sm text-[10px] text-outline">Course announcements will appear here.</p>
+                   </div>
+                 ) : (
+                   <div className="max-h-80 space-y-1 overflow-y-auto py-2">
+                     {notifications.slice(0, 6).map((notification) => {
+                       const href = notification.link || (user?.role === "STUDENT" ? "/student/announcements" : "/announcements");
+                       return (
+                         <Link
+                           key={notification.id}
+                           href={href}
+                           onClick={async () => {
+                             if (!notification.readAt) {
+                               try { await apiRequest(`/notifications/${notification.id}/read`, { method: "PATCH" }); } catch { /* keep navigation usable */ }
+                               setUnreadCount((count) => Math.max(0, count - 1));
+                               setNotifications((items) => items.map((item) => item.id === notification.id ? { ...item, readAt: new Date().toISOString() } : item));
+                             }
+                             setIsNotificationsOpen(false);
+                           }}
+                           className={`block rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-container ${notification.readAt ? "opacity-70" : "bg-primary-fixed/40"}`}
+                         >
+                           <div className="flex items-start gap-2">
+                             <span className="material-symbols-outlined mt-0.5 text-[17px] text-primary">campaign</span>
+                             <span className="min-w-0">
+                               <span className="block truncate text-xs font-semibold text-on-surface">{notification.title}</span>
+                               <span className="mt-0.5 block line-clamp-2 text-[11px] text-on-surface-variant">{notification.body}</span>
+                               <span className="mt-1 block text-[10px] text-outline">{new Date(notification.createdAt).toLocaleString()}</span>
+                             </span>
+                           </div>
+                         </Link>
+                       );
+                     })}
+                   </div>
+                 )}
+                 {notifications.length > 0 && (
+                   <div className="flex items-center justify-between border-t border-surface-container-high pt-2">
+                     <Link href={user?.role === "STUDENT" ? "/student/announcements" : user?.role === "FACULTY" ? "/faculty/announcements" : "/admin/announcements"} onClick={() => setIsNotificationsOpen(false)} className="text-[11px] font-semibold text-primary hover:text-primary-container">Open announcements</Link>
+                     {unreadCount > 0 && <button type="button" onClick={async () => { try { await apiRequest("/notifications/read-all", { method: "PATCH" }); setUnreadCount(0); setNotifications((items) => items.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() }))); } catch { /* keep current state */ } }} className="text-[11px] font-semibold text-on-surface-variant hover:text-on-surface">Mark all read</button>}
+                   </div>
+                 )}
               </div>
             )}
           </div>
@@ -264,7 +347,7 @@ export function Topbar({ title, subtitle, onMenuClick, breadcrumbs }: TopbarProp
               <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold text-xs shadow-xs shrink-0">
                 {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
               </div>
-              <span className="font-semibold text-on-surface text-xs hidden md:inline truncate max-w-[110px]">
+              <span className="font-semibold text-on-surface text-xs hidden md:inline truncate max-w-27.5">
                 {user?.name || "Academic User"}
               </span>
               <span className="material-symbols-outlined text-outline text-[18px]">

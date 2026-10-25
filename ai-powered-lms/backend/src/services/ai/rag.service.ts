@@ -1,6 +1,6 @@
 import prisma from "../../lib/prisma.js";
 import { embeddingService } from "./embedding.service.js";
-import { getLLMProvider } from "./providers/provider.registry.js";
+import { providerRegistry } from "./providers/provider.registry.js";
 import { LLMAttemptTelemetry } from "./providers/llm-provider.interface.js";
 import { StudentEducationalProfile } from "./student-context.service.js";
 
@@ -336,7 +336,6 @@ ACADEMIC TUTOR RESPONSE:`;
     const contextAssemblyMs = elapsedMs(tContextStart);
 
     // 3. Call Decoupled LLM Provider
-    const provider = getLLMProvider();
     const normalOutputTokens = positiveInteger(
       process.env.GEMINI_TUTOR_MAX_OUTPUT_TOKENS,
       DEFAULT_TUTOR_OUTPUT_TOKENS
@@ -345,13 +344,15 @@ ACADEMIC TUTOR RESPONSE:`;
       process.env.GEMINI_TUTOR_COMPLEX_MAX_OUTPUT_TOKENS,
       DEFAULT_COMPLEX_TUTOR_OUTPUT_TOKENS
     );
-    const genResult = await provider.generateCompletion(prompt, {
+    const providerGeneration = await providerRegistry.generateWithFallback(prompt, {
       complexity: isComplex ? "complex" : "normal",
       maxOutputTokens: isComplex ? complexOutputTokens : normalOutputTokens,
       generationBudgetMs: options?.generationBudgetMs,
       requestTimeoutMs: options?.generationBudgetMs,
       // Thinking budget defaults to 0 for normal chat (huge latency win) or elevated for complex
     });
+    const provider = providerGeneration.provider;
+    const genResult = providerGeneration.result;
 
     const generationMs = genResult.durationMs;
     const totalRoundTripMs = Math.round(

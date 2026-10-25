@@ -17,6 +17,13 @@ build/
 # Runtime-uploaded course files (keep outside Git)
 backend/uploads/
 
+# Private backup artifacts must never be committed
+backups/
+.private-backups/
+*.dump
+*.dump.partial
+*.dump.sha256
+
 # Logs
 *.log
 npm-debug.log*

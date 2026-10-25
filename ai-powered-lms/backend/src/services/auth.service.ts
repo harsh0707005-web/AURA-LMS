@@ -9,6 +9,7 @@ import {
 import { getJwtSecret } from "../middleware/auth.middleware.js";
 import { User } from "../generated/prisma/client.js";
 import { objectInput, registrationError } from "./registration.service.js";
+import { createRefreshSession } from "./refresh-session.service.js";
 export { registerUser, verifyStudentEmail, resendVerification } from "./registration.service.js";
 
 export function sanitizeUser(user: User): UserResponse {
@@ -29,11 +30,16 @@ export function sanitizeUser(user: User): UserResponse {
 
 export async function loginUser(
   input: LoginInput
-): Promise<{ user: UserResponse; token: string }> {
-  const { email, password } = objectInput(input);
+): Promise<{ user: UserResponse; token: string; refreshToken: string }> {
+  const body = objectInput(input);
+  const { email, password } = body;
+  const portalRole = body.portalRole;
 
   if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
     throw Object.assign(new Error("Institutional email and password are required"), { statusCode: 400 });
+  }
+  if (portalRole !== undefined && portalRole !== "STUDENT" && portalRole !== "FACULTY" && portalRole !== "ADMIN") {
+    throw Object.assign(new Error("Invalid portal selection"), { statusCode: 400 });
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -53,9 +59,12 @@ export async function loginUser(
   }
 
   if (user.status !== "ACTIVE") throw registrationError("Account is not active. Email verification or institutional approval may be required.", 403);
+  if (portalRole !== undefined && portalRole !== user.role) {
+    throw registrationError("This account cannot sign in to the selected portal", 403);
+  }
 
   const secret = getJwtSecret();
-  const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
+  const expiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || "15m";
 
   // Minimal clean JWT payload
   const token = jwt.sign(
@@ -68,10 +77,21 @@ export async function loginUser(
     { expiresIn } as SignOptions
   );
 
+  const refreshToken = await createRefreshSession(user.id);
+
   return {
     user: sanitizeUser(user),
     token,
+    refreshToken,
   };
+}
+
+export function issueAccessToken(user: User): string {
+  return jwt.sign(
+    { userId: user.id, email: user.email, role: user.role },
+    getJwtSecret(),
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m" } as SignOptions
+  );
 }
 
 export async function getUserProfile(userId: string): Promise<UserResponse> {

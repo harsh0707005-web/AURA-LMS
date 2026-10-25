@@ -27,16 +27,16 @@ Formally deprecate and remove the `Document` model from `schema.prisma` in a fut
 
 ### Observation
 
-Authentication tokens issued in [`backend/src/services/auth.service.ts`](../../backend/src/services/auth.service.ts) are single HS256 tokens with a static 7-day lifetime (`expiresIn: "7d"`).
+Authentication now uses short-lived HS256 access tokens plus database-backed refresh sessions. The access-token lifetime is configured through `ACCESS_TOKEN_EXPIRES_IN` and production validation caps it at one hour.
 
 ### Risks
 
-- **No Token Invalidation**: There is no server-side token blacklist or session store. If a token is intercepted or a student device is compromised, the token remains valid for 7 days unless `JWT_SECRET` is rotated (which kicks off all users).
-- **No Silent Refresh**: When the 7-day token expires, the client immediately encounters `401 Unauthorized` and is redirected to `/login`, interrupting mid-session work.
+- **Access-token window**: Logout revokes the refresh session, but an already-issued access token remains valid until expiry.
+- **Refresh-session replay**: A reused rotated refresh token revokes the user's remaining refresh sessions; this is covered by the auth-session smoke tests.
 
 ### Recommendation
 
-Implement standard OAuth-style dual token authentication (short-lived access tokens of 15–30 minutes stored in memory + HttpOnly secure refresh cookies stored in Redis or database) (Scheduled for Phase 16).
+The current implementation uses the recommended dual-token shape with in-memory access tokens and database-backed HttpOnly refresh cookies. Shared rate limiting is still required before horizontal scaling.
 
 ---
 

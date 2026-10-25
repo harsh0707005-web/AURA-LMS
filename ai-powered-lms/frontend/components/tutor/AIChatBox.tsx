@@ -18,6 +18,20 @@ import { apiRequest } from "@/lib/api";
 const AI_REQUEST_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_AI_REQUEST_TIMEOUT_MS) || 125_000;
 const AI_MESSAGE_STATUS_POLL_INTERVAL_MS = 2_000;
 const AI_MESSAGE_STATUS_MAX_POLLS = 30;
+const WEBSITE_SUGGESTIONS = [
+  "What courses am I currently enrolled in?",
+  "What are my current weak topics?",
+  "Why were these topics identified as weak areas?",
+  "How is my progress across enrolled courses?",
+  "What is my average quiz score?",
+  "Which assignments have I submitted?",
+  "What assignments or deadlines should I focus on?",
+  "Which course should I study next?",
+  "Create a study plan for my weak topics.",
+  "What course materials should I review next?",
+  "How can I use the AI Tutor effectively?",
+  "What can I do in the AURA LMS website?",
+];
 
 type PendingTutorMessage = {
   key: string;
@@ -91,11 +105,7 @@ export default function AIChatBox({
       sender: "assistant",
       content:
         "Hello! I am your course AI academic tutor. You can ask me to clarify concepts, explain syllabus topics, provide mathematical derivations, or guide your preparation grounded strictly in uploaded lecture notes.",
-      suggestedFollowUps: [
-        "Explain how randomized election timeouts prevent split votes in Raft",
-        "What are the main tradeoffs between B+ Trees and LSM Trees in databases?",
-        "How does NVIC prioritize nested interrupts in ARM Cortex-M architecture?",
-      ],
+      suggestedFollowUps: WEBSITE_SUGGESTIONS,
     },
   ]);
   const [input, setInput] = useState("");
@@ -172,10 +182,7 @@ export default function AIChatBox({
         content: `Switched to ${selectedCourse?.code || "Course"}: ${
           selectedCourse?.title || "Academic Syllabus"
         }. Ask any question grounded in the lecture documents for this course.`,
-        suggestedFollowUps: [
-          `Explain the key architecture principles of ${selectedCourse?.code || "this course"}`,
-          `What are the most important examination topics for this unit?`,
-        ],
+        suggestedFollowUps: WEBSITE_SUGGESTIONS,
       },
     ]);
   };
@@ -196,11 +203,7 @@ export default function AIChatBox({
         content: `Started a fresh academic session for ${
           selectedCourse?.code || "this course"
         }. How can I assist your study today?`,
-        suggestedFollowUps: [
-          "Explain how randomized election timeouts prevent split votes in Raft",
-          "What are the main tradeoffs between B+ Trees and LSM Trees in databases?",
-          "How does NVIC prioritize nested interrupts in ARM Cortex-M architecture?",
-        ],
+        suggestedFollowUps: WEBSITE_SUGGESTIONS,
       },
     ]);
   };
@@ -401,8 +404,11 @@ export default function AIChatBox({
         appendReconciledAssistantMessage(pendingMessage.key, response.data?.assistantMessage);
       }
     } catch (error: unknown) {
-      console.error("AI Tutor error:", error);
       if (pendingMessageRef.current?.key !== pendingMessage.key) return;
+      // Starting a new thread or changing courses intentionally aborts the
+      // previous request. The pending key is cleared by those handlers, so
+      // ignore that expected cancellation instead of logging it as an error.
+      console.error("AI Tutor error:", error);
       const timedOut = requestController.signal.aborted || isAbortError(error);
 
       if (timedOut && pendingMessage.conversationId) {
@@ -474,7 +480,7 @@ export default function AIChatBox({
   // ==========================================
   if (mode === "compact") {
     return (
-      <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl flex flex-col h-[640px] shadow-sm overflow-hidden">
+      <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl flex flex-col h-160 shadow-sm overflow-hidden">
         {/* Header */}
         <div className="px-4 py-3.5 border-b border-surface-container-high flex items-center justify-between bg-surface-container-low/70 shrink-0">
           <div className="flex items-center gap-2.5">
@@ -510,7 +516,7 @@ export default function AIChatBox({
             <select
               value={activeCourseId}
               onChange={(e) => handleCourseChange(e.target.value)}
-              className="bg-surface-container-lowest border border-surface-container-high rounded-lg px-2 py-1 text-on-surface font-label-sm text-[11px] focus:outline-hidden focus:ring-1 focus:ring-primary max-w-[210px] truncate"
+              className="bg-surface-container-lowest border border-surface-container-high rounded-lg px-2 py-1 text-on-surface font-label-sm text-[11px] focus:outline-hidden focus:ring-1 focus:ring-primary max-w-52.5 truncate"
               aria-label="Select course context"
             >
               {courses.map((c) => (
@@ -657,7 +663,7 @@ export default function AIChatBox({
             {/* Active Course Selector */}
             <div className="relative inline-flex items-center">
               {courses.length > 0 ? (
-                <div className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-container text-on-primary px-3.5 py-1.5 rounded-xl shadow-xs">
+                <div className="flex items-center gap-2 bg-linear-to-r from-primary to-primary-container text-on-primary px-3.5 py-1.5 rounded-xl shadow-xs">
                   <span className="material-symbols-outlined text-[18px]">school</span>
                   <select
                     value={activeCourseId}
@@ -777,7 +783,7 @@ export default function AIChatBox({
                 {msg.sender === "user" ? (
                   /* User Prompt Bubble */
                   <div className="flex justify-end gap-3 pl-8">
-                    <div className="max-w-[85%] bg-gradient-to-br from-[#1e1b4b] via-[#2e1065] to-[#1e1b4b] text-on-primary rounded-2xl p-5 shadow-md border border-primary-fixed/20 space-y-2">
+                    <div className="max-w-[85%] bg-linear-to-br from-[#1e1b4b] via-[#2e1065] to-[#1e1b4b] text-on-primary rounded-2xl p-5 shadow-md border border-primary-fixed/20 space-y-2">
                       <div className="flex items-center justify-between gap-4 pb-1.5 border-b border-white/10">
                         <div className="flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-[14px] text-secondary-fixed">
@@ -802,14 +808,14 @@ export default function AIChatBox({
                         </div>
                       )}
                     </div>
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary flex items-center justify-center font-label-md text-xs font-bold shrink-0 mt-1 shadow-sm">
+                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-primary to-primary-container text-on-primary flex items-center justify-center font-label-md text-xs font-bold shrink-0 mt-1 shadow-sm">
                       ME
                     </div>
                   </div>
                 ) : (
                   /* Assistant Grounded Response Card */
                   <div className="flex items-start gap-3 pr-2 sm:pr-4">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-on-primary shadow-xs shrink-0 mt-1">
+                    <div className="w-9 h-9 rounded-xl bg-linear-to-br from-primary to-primary-container flex items-center justify-center text-on-primary shadow-xs shrink-0 mt-1">
                       <span className="material-symbols-outlined text-[20px]">psychology</span>
                     </div>
 
@@ -879,7 +885,7 @@ export default function AIChatBox({
             {/* Loading Indicator Bubble */}
             {loading && (
               <div className="flex items-start gap-3 animate-fade-in">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-on-primary shadow-xs shrink-0 mt-1">
+                <div className="w-9 h-9 rounded-xl bg-linear-to-br from-primary to-primary-container flex items-center justify-center text-on-primary shadow-xs shrink-0 mt-1">
                   <span className="material-symbols-outlined text-[20px]">psychology</span>
                 </div>
                 <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-5 shadow-sm space-y-2">

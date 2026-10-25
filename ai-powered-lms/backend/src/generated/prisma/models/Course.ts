@@ -281,6 +281,7 @@ export type CourseWhereInput = {
   performances?: Prisma.PerformanceListRelationFilter
   quizzes?: Prisma.QuizListRelationFilter
   recommendations?: Prisma.RecommendationListRelationFilter
+  announcements?: Prisma.AnnouncementListRelationFilter
 }
 
 export type CourseOrderByWithRelationInput = {
@@ -304,6 +305,7 @@ export type CourseOrderByWithRelationInput = {
   performances?: Prisma.PerformanceOrderByRelationAggregateInput
   quizzes?: Prisma.QuizOrderByRelationAggregateInput
   recommendations?: Prisma.RecommendationOrderByRelationAggregateInput
+  announcements?: Prisma.AnnouncementOrderByRelationAggregateInput
 }
 
 export type CourseWhereUniqueInput = Prisma.AtLeast<{
@@ -330,6 +332,7 @@ export type CourseWhereUniqueInput = Prisma.AtLeast<{
   performances?: Prisma.PerformanceListRelationFilter
   quizzes?: Prisma.QuizListRelationFilter
   recommendations?: Prisma.RecommendationListRelationFilter
+  announcements?: Prisma.AnnouncementListRelationFilter
 }, "id" | "code">
 
 export type CourseOrderByWithAggregationInput = {
@@ -388,6 +391,7 @@ export type CourseCreateInput = {
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateInput = {
@@ -410,6 +414,7 @@ export type CourseUncheckedCreateInput = {
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUpdateInput = {
@@ -432,6 +437,7 @@ export type CourseUpdateInput = {
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateInput = {
@@ -454,6 +460,7 @@ export type CourseUncheckedUpdateInput = {
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateManyInput = {
@@ -505,6 +512,11 @@ export type CourseListRelationFilter = {
 
 export type CourseOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type CourseNullableScalarRelationFilter = {
+  is?: Prisma.CourseWhereInput | null
+  isNot?: Prisma.CourseWhereInput | null
 }
 
 export type CourseCountOrderByAggregateInput = {
@@ -566,11 +578,6 @@ export type CourseScalarRelationFilter = {
   isNot?: Prisma.CourseWhereInput
 }
 
-export type CourseNullableScalarRelationFilter = {
-  is?: Prisma.CourseWhereInput | null
-  isNot?: Prisma.CourseWhereInput | null
-}
-
 export type CourseCreateNestedManyWithoutFacultyInput = {
   create?: Prisma.XOR<Prisma.CourseCreateWithoutFacultyInput, Prisma.CourseUncheckedCreateWithoutFacultyInput> | Prisma.CourseCreateWithoutFacultyInput[] | Prisma.CourseUncheckedCreateWithoutFacultyInput[]
   connectOrCreate?: Prisma.CourseCreateOrConnectWithoutFacultyInput | Prisma.CourseCreateOrConnectWithoutFacultyInput[]
@@ -611,6 +618,22 @@ export type CourseUncheckedUpdateManyWithoutFacultyNestedInput = {
   update?: Prisma.CourseUpdateWithWhereUniqueWithoutFacultyInput | Prisma.CourseUpdateWithWhereUniqueWithoutFacultyInput[]
   updateMany?: Prisma.CourseUpdateManyWithWhereWithoutFacultyInput | Prisma.CourseUpdateManyWithWhereWithoutFacultyInput[]
   deleteMany?: Prisma.CourseScalarWhereInput | Prisma.CourseScalarWhereInput[]
+}
+
+export type CourseCreateNestedOneWithoutAnnouncementsInput = {
+  create?: Prisma.XOR<Prisma.CourseCreateWithoutAnnouncementsInput, Prisma.CourseUncheckedCreateWithoutAnnouncementsInput>
+  connectOrCreate?: Prisma.CourseCreateOrConnectWithoutAnnouncementsInput
+  connect?: Prisma.CourseWhereUniqueInput
+}
+
+export type CourseUpdateOneWithoutAnnouncementsNestedInput = {
+  create?: Prisma.XOR<Prisma.CourseCreateWithoutAnnouncementsInput, Prisma.CourseUncheckedCreateWithoutAnnouncementsInput>
+  connectOrCreate?: Prisma.CourseCreateOrConnectWithoutAnnouncementsInput
+  upsert?: Prisma.CourseUpsertWithoutAnnouncementsInput
+  disconnect?: Prisma.CourseWhereInput | boolean
+  delete?: Prisma.CourseWhereInput | boolean
+  connect?: Prisma.CourseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CourseUpdateToOneWithWhereWithoutAnnouncementsInput, Prisma.CourseUpdateWithoutAnnouncementsInput>, Prisma.CourseUncheckedUpdateWithoutAnnouncementsInput>
 }
 
 export type IntFieldUpdateOperationsInput = {
@@ -754,6 +777,7 @@ export type CourseCreateWithoutFacultyInput = {
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutFacultyInput = {
@@ -775,6 +799,7 @@ export type CourseUncheckedCreateWithoutFacultyInput = {
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutFacultyInput = {
@@ -820,6 +845,110 @@ export type CourseScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Course"> | Date | string
 }
 
+export type CourseCreateWithoutAnnouncementsInput = {
+  id?: string
+  code: string
+  title: string
+  description: string
+  department?: string
+  semester?: number
+  credits?: number
+  totalModules?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  aiConversations?: Prisma.AIConversationCreateNestedManyWithoutCourseInput
+  assignments?: Prisma.AssignmentCreateNestedManyWithoutCourseInput
+  faculty: Prisma.UserCreateNestedOneWithoutCoursesTaughtInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCourseInput
+  enrollments?: Prisma.EnrollmentCreateNestedManyWithoutCourseInput
+  materials?: Prisma.MaterialCreateNestedManyWithoutCourseInput
+  performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
+  recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+}
+
+export type CourseUncheckedCreateWithoutAnnouncementsInput = {
+  id?: string
+  code: string
+  title: string
+  description: string
+  department?: string
+  semester?: number
+  credits?: number
+  totalModules?: number
+  facultyId: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  aiConversations?: Prisma.AIConversationUncheckedCreateNestedManyWithoutCourseInput
+  assignments?: Prisma.AssignmentUncheckedCreateNestedManyWithoutCourseInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCourseInput
+  enrollments?: Prisma.EnrollmentUncheckedCreateNestedManyWithoutCourseInput
+  materials?: Prisma.MaterialUncheckedCreateNestedManyWithoutCourseInput
+  performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
+  recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+}
+
+export type CourseCreateOrConnectWithoutAnnouncementsInput = {
+  where: Prisma.CourseWhereUniqueInput
+  create: Prisma.XOR<Prisma.CourseCreateWithoutAnnouncementsInput, Prisma.CourseUncheckedCreateWithoutAnnouncementsInput>
+}
+
+export type CourseUpsertWithoutAnnouncementsInput = {
+  update: Prisma.XOR<Prisma.CourseUpdateWithoutAnnouncementsInput, Prisma.CourseUncheckedUpdateWithoutAnnouncementsInput>
+  create: Prisma.XOR<Prisma.CourseCreateWithoutAnnouncementsInput, Prisma.CourseUncheckedCreateWithoutAnnouncementsInput>
+  where?: Prisma.CourseWhereInput
+}
+
+export type CourseUpdateToOneWithWhereWithoutAnnouncementsInput = {
+  where?: Prisma.CourseWhereInput
+  data: Prisma.XOR<Prisma.CourseUpdateWithoutAnnouncementsInput, Prisma.CourseUncheckedUpdateWithoutAnnouncementsInput>
+}
+
+export type CourseUpdateWithoutAnnouncementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  department?: Prisma.StringFieldUpdateOperationsInput | string
+  semester?: Prisma.IntFieldUpdateOperationsInput | number
+  credits?: Prisma.IntFieldUpdateOperationsInput | number
+  totalModules?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aiConversations?: Prisma.AIConversationUpdateManyWithoutCourseNestedInput
+  assignments?: Prisma.AssignmentUpdateManyWithoutCourseNestedInput
+  faculty?: Prisma.UserUpdateOneRequiredWithoutCoursesTaughtNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCourseNestedInput
+  enrollments?: Prisma.EnrollmentUpdateManyWithoutCourseNestedInput
+  materials?: Prisma.MaterialUpdateManyWithoutCourseNestedInput
+  performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
+  recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+}
+
+export type CourseUncheckedUpdateWithoutAnnouncementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  department?: Prisma.StringFieldUpdateOperationsInput | string
+  semester?: Prisma.IntFieldUpdateOperationsInput | number
+  credits?: Prisma.IntFieldUpdateOperationsInput | number
+  totalModules?: Prisma.IntFieldUpdateOperationsInput | number
+  facultyId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aiConversations?: Prisma.AIConversationUncheckedUpdateManyWithoutCourseNestedInput
+  assignments?: Prisma.AssignmentUncheckedUpdateManyWithoutCourseNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCourseNestedInput
+  enrollments?: Prisma.EnrollmentUncheckedUpdateManyWithoutCourseNestedInput
+  materials?: Prisma.MaterialUncheckedUpdateManyWithoutCourseNestedInput
+  performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
+  recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+}
+
 export type CourseCreateWithoutEnrollmentsInput = {
   id?: string
   code: string
@@ -839,6 +968,7 @@ export type CourseCreateWithoutEnrollmentsInput = {
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutEnrollmentsInput = {
@@ -860,6 +990,7 @@ export type CourseUncheckedCreateWithoutEnrollmentsInput = {
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutEnrollmentsInput = {
@@ -897,6 +1028,7 @@ export type CourseUpdateWithoutEnrollmentsInput = {
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutEnrollmentsInput = {
@@ -918,6 +1050,7 @@ export type CourseUncheckedUpdateWithoutEnrollmentsInput = {
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateWithoutMaterialsInput = {
@@ -939,6 +1072,7 @@ export type CourseCreateWithoutMaterialsInput = {
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutMaterialsInput = {
@@ -960,6 +1094,7 @@ export type CourseUncheckedCreateWithoutMaterialsInput = {
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutMaterialsInput = {
@@ -997,6 +1132,7 @@ export type CourseUpdateWithoutMaterialsInput = {
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutMaterialsInput = {
@@ -1018,6 +1154,7 @@ export type CourseUncheckedUpdateWithoutMaterialsInput = {
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateWithoutAssignmentsInput = {
@@ -1039,6 +1176,7 @@ export type CourseCreateWithoutAssignmentsInput = {
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutAssignmentsInput = {
@@ -1060,6 +1198,7 @@ export type CourseUncheckedCreateWithoutAssignmentsInput = {
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutAssignmentsInput = {
@@ -1097,6 +1236,7 @@ export type CourseUpdateWithoutAssignmentsInput = {
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutAssignmentsInput = {
@@ -1118,6 +1258,7 @@ export type CourseUncheckedUpdateWithoutAssignmentsInput = {
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateWithoutQuizzesInput = {
@@ -1139,6 +1280,7 @@ export type CourseCreateWithoutQuizzesInput = {
   materials?: Prisma.MaterialCreateNestedManyWithoutCourseInput
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutQuizzesInput = {
@@ -1160,6 +1302,7 @@ export type CourseUncheckedCreateWithoutQuizzesInput = {
   materials?: Prisma.MaterialUncheckedCreateNestedManyWithoutCourseInput
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutQuizzesInput = {
@@ -1197,6 +1340,7 @@ export type CourseUpdateWithoutQuizzesInput = {
   materials?: Prisma.MaterialUpdateManyWithoutCourseNestedInput
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutQuizzesInput = {
@@ -1218,6 +1362,7 @@ export type CourseUncheckedUpdateWithoutQuizzesInput = {
   materials?: Prisma.MaterialUncheckedUpdateManyWithoutCourseNestedInput
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateWithoutAiConversationsInput = {
@@ -1239,6 +1384,7 @@ export type CourseCreateWithoutAiConversationsInput = {
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutAiConversationsInput = {
@@ -1260,6 +1406,7 @@ export type CourseUncheckedCreateWithoutAiConversationsInput = {
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutAiConversationsInput = {
@@ -1297,6 +1444,7 @@ export type CourseUpdateWithoutAiConversationsInput = {
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutAiConversationsInput = {
@@ -1318,6 +1466,7 @@ export type CourseUncheckedUpdateWithoutAiConversationsInput = {
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateWithoutDocumentsInput = {
@@ -1339,6 +1488,7 @@ export type CourseCreateWithoutDocumentsInput = {
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutDocumentsInput = {
@@ -1360,6 +1510,7 @@ export type CourseUncheckedCreateWithoutDocumentsInput = {
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutDocumentsInput = {
@@ -1397,6 +1548,7 @@ export type CourseUpdateWithoutDocumentsInput = {
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutDocumentsInput = {
@@ -1418,6 +1570,7 @@ export type CourseUncheckedUpdateWithoutDocumentsInput = {
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateWithoutPerformancesInput = {
@@ -1439,6 +1592,7 @@ export type CourseCreateWithoutPerformancesInput = {
   materials?: Prisma.MaterialCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutPerformancesInput = {
@@ -1460,6 +1614,7 @@ export type CourseUncheckedCreateWithoutPerformancesInput = {
   materials?: Prisma.MaterialUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
   recommendations?: Prisma.RecommendationUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutPerformancesInput = {
@@ -1497,6 +1652,7 @@ export type CourseUpdateWithoutPerformancesInput = {
   materials?: Prisma.MaterialUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutPerformancesInput = {
@@ -1518,6 +1674,7 @@ export type CourseUncheckedUpdateWithoutPerformancesInput = {
   materials?: Prisma.MaterialUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateWithoutRecommendationsInput = {
@@ -1539,6 +1696,7 @@ export type CourseCreateWithoutRecommendationsInput = {
   materials?: Prisma.MaterialCreateNestedManyWithoutCourseInput
   performances?: Prisma.PerformanceCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutCourseInput
 }
 
 export type CourseUncheckedCreateWithoutRecommendationsInput = {
@@ -1560,6 +1718,7 @@ export type CourseUncheckedCreateWithoutRecommendationsInput = {
   materials?: Prisma.MaterialUncheckedCreateNestedManyWithoutCourseInput
   performances?: Prisma.PerformanceUncheckedCreateNestedManyWithoutCourseInput
   quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutCourseInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutCourseInput
 }
 
 export type CourseCreateOrConnectWithoutRecommendationsInput = {
@@ -1597,6 +1756,7 @@ export type CourseUpdateWithoutRecommendationsInput = {
   materials?: Prisma.MaterialUpdateManyWithoutCourseNestedInput
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutRecommendationsInput = {
@@ -1618,6 +1778,7 @@ export type CourseUncheckedUpdateWithoutRecommendationsInput = {
   materials?: Prisma.MaterialUncheckedUpdateManyWithoutCourseNestedInput
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseCreateManyFacultyInput = {
@@ -1652,6 +1813,7 @@ export type CourseUpdateWithoutFacultyInput = {
   performances?: Prisma.PerformanceUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateWithoutFacultyInput = {
@@ -1673,6 +1835,7 @@ export type CourseUncheckedUpdateWithoutFacultyInput = {
   performances?: Prisma.PerformanceUncheckedUpdateManyWithoutCourseNestedInput
   quizzes?: Prisma.QuizUncheckedUpdateManyWithoutCourseNestedInput
   recommendations?: Prisma.RecommendationUncheckedUpdateManyWithoutCourseNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutCourseNestedInput
 }
 
 export type CourseUncheckedUpdateManyWithoutFacultyInput = {
@@ -1702,6 +1865,7 @@ export type CourseCountOutputType = {
   performances: number
   quizzes: number
   recommendations: number
+  announcements: number
 }
 
 export type CourseCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1713,6 +1877,7 @@ export type CourseCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   performances?: boolean | CourseCountOutputTypeCountPerformancesArgs
   quizzes?: boolean | CourseCountOutputTypeCountQuizzesArgs
   recommendations?: boolean | CourseCountOutputTypeCountRecommendationsArgs
+  announcements?: boolean | CourseCountOutputTypeCountAnnouncementsArgs
 }
 
 /**
@@ -1781,6 +1946,13 @@ export type CourseCountOutputTypeCountRecommendationsArgs<ExtArgs extends runtim
   where?: Prisma.RecommendationWhereInput
 }
 
+/**
+ * CourseCountOutputType without action
+ */
+export type CourseCountOutputTypeCountAnnouncementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnnouncementWhereInput
+}
+
 
 export type CourseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1803,6 +1975,7 @@ export type CourseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   performances?: boolean | Prisma.Course$performancesArgs<ExtArgs>
   quizzes?: boolean | Prisma.Course$quizzesArgs<ExtArgs>
   recommendations?: boolean | Prisma.Course$recommendationsArgs<ExtArgs>
+  announcements?: boolean | Prisma.Course$announcementsArgs<ExtArgs>
   _count?: boolean | Prisma.CourseCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["course"]>
 
@@ -1861,6 +2034,7 @@ export type CourseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   performances?: boolean | Prisma.Course$performancesArgs<ExtArgs>
   quizzes?: boolean | Prisma.Course$quizzesArgs<ExtArgs>
   recommendations?: boolean | Prisma.Course$recommendationsArgs<ExtArgs>
+  announcements?: boolean | Prisma.Course$announcementsArgs<ExtArgs>
   _count?: boolean | Prisma.CourseCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CourseIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1882,6 +2056,7 @@ export type $CoursePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     performances: Prisma.$PerformancePayload<ExtArgs>[]
     quizzes: Prisma.$QuizPayload<ExtArgs>[]
     recommendations: Prisma.$RecommendationPayload<ExtArgs>[]
+    announcements: Prisma.$AnnouncementPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2298,6 +2473,7 @@ export interface Prisma__CourseClient<T, Null = never, ExtArgs extends runtime.T
   performances<T extends Prisma.Course$performancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Course$performancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PerformancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   quizzes<T extends Prisma.Course$quizzesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Course$quizzesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuizPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   recommendations<T extends Prisma.Course$recommendationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Course$recommendationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecommendationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  announcements<T extends Prisma.Course$announcementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Course$announcementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnnouncementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2928,6 +3104,30 @@ export type Course$recommendationsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.RecommendationScalarFieldEnum | Prisma.RecommendationScalarFieldEnum[]
+}
+
+/**
+ * Course.announcements
+ */
+export type Course$announcementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Announcement
+   */
+  select?: Prisma.AnnouncementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Announcement
+   */
+  omit?: Prisma.AnnouncementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnnouncementInclude<ExtArgs> | null
+  where?: Prisma.AnnouncementWhereInput
+  orderBy?: Prisma.AnnouncementOrderByWithRelationInput | Prisma.AnnouncementOrderByWithRelationInput[]
+  cursor?: Prisma.AnnouncementWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnnouncementScalarFieldEnum | Prisma.AnnouncementScalarFieldEnum[]
 }
 
 /**

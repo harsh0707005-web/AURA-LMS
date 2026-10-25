@@ -102,5 +102,5 @@ curl -X GET http://localhost:5000/api/analytics/at-risk \
 | **Student** | `harsh.ce@college.edu` | `Password123` | `BE-2022-CS-104` | Computer Engineering |
 | **Student** | `ananya.ce@college.edu` | `Password123` | `BE-2022-CS-108` | Computer Engineering |
 | **Faculty** | `dr.rajesh@college.edu` | `Password123` | `EMP-CS-042` | Computer Engineering |
-| **Faculty** | `prof.sneha@college.edu` | `Password123` | `EMP-CS-049` | Computer Engineering |
+| **Faculty** | `priya.iyer@college.edu` | `Password123` | `EMP-CS-058` | Computer Engineering |
 | **Admin** | `admin.ce@college.edu` | `Password123` | `SYS-ADMIN-01` | Computer Engineering |

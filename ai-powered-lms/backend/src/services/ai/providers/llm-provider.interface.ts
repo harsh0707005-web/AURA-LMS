@@ -20,6 +20,7 @@ export interface LLMGenerationOptions {
 }
 
 export interface LLMAttemptTelemetry {
+  providerId?: string;
   model: string;
   attempt: number;
   outcome: "success" | "error";

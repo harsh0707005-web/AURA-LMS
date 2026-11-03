@@ -26,6 +26,27 @@ At startup, `NODE_ENV=production` fails closed unless all of the following are v
 6. Smoke-test registration/verification or reset, login/logout, role access, a protected material request, and the AI tutor with a test account.
 7. Record the release version and rollback target.
 
+## Render backend settings
+
+When `NODE_ENV=production` is configured on a Render service, npm may omit
+`devDependencies` during `npm ci`. The backend TypeScript build requires those
+packages, including TypeScript and the Express type declarations. Use this
+Render build command:
+
+```bash
+npm ci --include=dev && npx prisma generate && npm run build
+```
+
+Use this start command:
+
+```bash
+npm start
+```
+
+Set the Render service root directory to `ai-powered-lms/backend`. Keep `NODE_ENV=production`
+in the service environment; `--include=dev` only ensures the build-time type
+packages are installed.
+
 ## Backup and email verification commands
 
 The repository includes operator-run checks. For this local-only installation, no cloud account or deployment was created:

@@ -167,6 +167,7 @@ app.get("/api/health/db", async (_req, res) => {
           }
     );
   } catch (error: unknown) {
+    console.error("[HEALTH CHECK ERROR] Database health check failed:", error);
     const message = process.env.NODE_ENV === "production"
       ? "Database health check failed"
       : error instanceof Error ? error.message : "Database connection failed";

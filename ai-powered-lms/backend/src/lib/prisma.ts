@@ -5,7 +5,15 @@ import { PrismaClient } from "../generated/prisma/client.js";
 
 const connectionString = process.env.DATABASE_URL;
 
-const pool = new Pool({ connectionString });
+const isRemoteDb =
+  connectionString?.includes("supabase") ||
+  connectionString?.includes("sslmode=require") ||
+  process.env.NODE_ENV === "production";
+
+const pool = new Pool({
+  connectionString,
+  ssl: isRemoteDb ? { rejectUnauthorized: false } : undefined,
+});
 const adapter = new PrismaPg(pool);
 
 const globalForPrisma = globalThis as unknown as {

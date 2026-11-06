@@ -47,7 +47,7 @@ const allowedOrigins = process.env.NODE_ENV === "production"
   : [FRONTEND_URL, "http://localhost:3000", "http://127.0.0.1:3000"];
 
 app.disable("x-powered-by");
-if (process.env.TRUST_PROXY === "true") app.set("trust proxy", 1);
+if (process.env.TRUST_PROXY === "true" || process.env.NODE_ENV === "production") app.set("trust proxy", 1);
 app.use(securityHeaders);
 
 // CORS Configuration

@@ -15,7 +15,7 @@ import { createRateLimiter } from "../middleware/security.middleware.js";
 
 const router = Router();
 
-const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10, message: "Too many authentication attempts. Please try again later." });
+const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 50, message: "Too many authentication attempts. Please try again later." });
 const passwordResetRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5, message: "Too many password reset requests. Please try again later." });
 
 router.post("/register", authRateLimit, register);

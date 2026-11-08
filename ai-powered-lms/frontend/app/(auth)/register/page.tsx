@@ -118,7 +118,7 @@ export default function RegisterPage() {
             <span className="material-symbols-outlined text-primary text-[18px]">verified_user</span>
             <p>
               {mode === "STUDENT"
-                ? "Student registration is matched to an active institutional enrollment record. You will need to verify your email before signing in."
+                ? "Enter your simple Enrollment ID (e.g. 01, 02, 03) and email to register your student account."
                 : "Faculty applications are reviewed by an administrator before the account can be activated. No account is signed in automatically."}
             </p>
           </div>
@@ -137,18 +137,24 @@ export default function RegisterPage() {
               <span className="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
               <div>
                 <p className="font-bold">
-                  {registrationResult.status === "PENDING_EMAIL" ? "Registration received" : "Faculty application received"}
+                  {registrationResult.status === "ACTIVE"
+                    ? "Registration successful!"
+                    : registrationResult.status === "PENDING_EMAIL"
+                    ? "Registration received"
+                    : "Faculty application received"}
                 </p>
                 <p className="mt-1 text-on-surface-variant">
                   {registrationResult.message ||
-                    (registrationResult.status === "PENDING_EMAIL"
+                    (registrationResult.status === "ACTIVE"
+                      ? "Your student account is active! You can now sign in directly."
+                      : registrationResult.status === "PENDING_EMAIL"
                       ? "Check your institutional inbox for a verification link. You can sign in after your email is verified."
                       : "An administrator must approve your application before you can sign in.")}
                 </p>
               </div>
             </div>
             <Link href="/login" className="mt-3 inline-flex items-center gap-1 font-semibold text-primary hover:text-primary-container">
-              Return to sign in
+              Proceed to sign in
               <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
             </Link>
           </div>
@@ -184,13 +190,13 @@ export default function RegisterPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             {mode === "STUDENT" ? (
               <div>
-                <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">Enrollment ID</label>
+                <label className="block font-semibold text-on-surface mb-1 font-mono text-[11px] uppercase tracking-wider">Enrollment ID (e.g. 01, 02)</label>
                 <input
                   type="text"
                   required
                   value={enrollmentNo}
                   onChange={(e) => setEnrollmentNo(e.target.value)}
-                  placeholder="BE-2022-CS-104"
+                  placeholder="01"
                   className="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg p-2.5 text-on-surface focus:outline-none focus:border-primary font-mono uppercase transition-colors"
                 />
               </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { apiRequest } from "@/lib/api";
 
 interface RegisterResponsePayload {
-  status: "PENDING_EMAIL" | "PENDING_FACULTY_APPROVAL";
+  status: "ACTIVE" | "PENDING_EMAIL" | "PENDING_FACULTY_APPROVAL";
   message: string;
   verificationDelivery?: "SENT" | "NOT_CONFIGURED" | "FAILED";
 }

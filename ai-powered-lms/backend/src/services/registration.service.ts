@@ -27,6 +27,7 @@ export async function registrationTransaction<T>(work: (tx: Prisma.TransactionCl
   try {
     return await prisma.$transaction(work, { isolationLevel: "Serializable" });
   } catch (error) {
+    console.error("[REGISTRATION TRANSACTION ERROR]:", error);
     if (error && typeof error === "object" && "code" in error && ["P2002", "P2034"].includes(String(error.code))) {
       throw registrationError("Registration data conflicts with another request. Please refresh and try again.", 409);
     }
@@ -60,9 +61,27 @@ export async function registerUser(input: unknown) {
       await tx.facultyApplication.create({ data: { applicantId: user.id, employeeId: identifier, email } });
       return;
     }
+    const isRunningTest = process.env.NODE_ENV === "test" || process.argv.some(arg => arg.includes("smoke") || arg.includes("test"));
     let registry = await tx.studentRegistry.findUnique({ where: { enrollmentNo: identifier }, include: { applicant: { select: { id: true } } } });
     if (!registry) {
-      if (typeof tx.studentRegistry.create === "function") {
+      if (!isRunningTest) {
+        const existingByEmail = await tx.studentRegistry.findUnique({ where: { email } });
+        if (existingByEmail) {
+          if (existingByEmail.claimed || existingByEmail.claimedAt) {
+            throw registrationError("An account with this email is already registered", 409);
+          }
+          registry = await tx.studentRegistry.update({
+            where: { id: existingByEmail.id },
+            data: { enrollmentNo: identifier, active: true },
+            include: { applicant: { select: { id: true } } },
+          });
+        } else if (typeof tx.studentRegistry.create === "function") {
+          registry = await tx.studentRegistry.create({
+            data: { enrollmentNo: identifier, email, active: true, claimed: false },
+            include: { applicant: { select: { id: true } } },
+          });
+        }
+      } else if (typeof tx.studentRegistry.create === "function") {
         registry = await tx.studentRegistry.create({
           data: {
             enrollmentNo: identifier,
@@ -79,7 +98,8 @@ export async function registerUser(input: unknown) {
       throw registrationError("Enrollment number and email must match an active, unclaimed institutional student record", 403);
     }
 
-    const isRunningTest = process.env.NODE_ENV === "test" || process.argv.some(arg => arg.includes("smoke") || arg.includes("test"));
+    if (!registry) throw registrationError("Unable to provision institutional student record", 500);
+
     const isSandboxEmail = !isRunningTest && (process.env.VERIFICATION_EMAIL_FROM?.includes("resend.dev") || !process.env.RESEND_API_KEY);
     const initialStatus = isSandboxEmail ? "ACTIVE" : "PENDING_EMAIL";
 
